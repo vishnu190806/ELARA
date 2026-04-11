@@ -49,7 +49,11 @@ Timely, accurate, and easily understandable alerts for space events, specificall
 
 ## Constraints
 
-- **Tech Stack**: Next.js 14, TypeScript, Tailwind CSS, Firebase (Auth + Firestore + Hosting) — Mandatory per user request.
+- **Tech Stack**: Next.js 14 (App Router), TypeScript, Tailwind CSS, Firebase (Auth + Firestore + Hosting) — Mandatory per user request.
+- **UI Components**: Use shadcn/ui for components, no custom component library.
+- **Security**: Firebase config must be stored strictly in environment variables, never hardcoded.
+- **Performance/Cost**: The Space Devs API free tier requires a simple in-memory cache layer to avoid rate limits.
+- **Version Control**: Commit after every major step so Ralph Loop can track progress.
 - **Cloud Cover APIs**: Must use Open-Meteo for free, keyless access.
 - **Light Pollution data**: Must use static lookup from Firestore per major Indian city to avoid API costs/latency.
 

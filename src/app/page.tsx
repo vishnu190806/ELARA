@@ -1,101 +1,207 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
+import SkyScoreRing from "@/components/SkyScoreRing";
+import EventCard, { EventCardSkeleton } from "@/components/EventCard";
+import LocationPicker from "@/components/LocationPicker";
+import { Cloud, Eye, Moon, RefreshCw } from "lucide-react";
+
+interface SkyScore {
+  score: number;
+  metrics: { cloudCover: number; lightPollution: number; moonBrightness: number };
+  meta: { nearestZone: string };
+}
+
+const DEFAULT_LAT = 17.385;
+const DEFAULT_LNG = 78.4867;
+const DEFAULT_CITY = "Hyderabad";
+
+export default function HomePage() {
+  const [location, setLocation] = useState({ lat: DEFAULT_LAT, lng: DEFAULT_LNG, city: DEFAULT_CITY });
+  const [skyScore, setSkyScore] = useState<SkyScore | null>(null);
+  const [skyLoading, setSkyLoading] = useState(true);
+  const [skyError, setSkyError] = useState(false);
+  const [events, setEvents] = useState<any[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventsError, setEventsError] = useState(false);
+
+  const fetchSkyScore = useCallback(async (lat: number, lng: number) => {
+    setSkyLoading(true);
+    setSkyError(false);
+    try {
+      const res = await fetch(`/api/sky-score?lat=${lat}&lng=${lng}`);
+      if (!res.ok) throw new Error();
+      setSkyScore(await res.json());
+    } catch {
+      setSkyError(true);
+    } finally {
+      setSkyLoading(false);
+    }
+  }, []);
+
+  const fetchEvents = useCallback(async () => {
+    setEventsLoading(true);
+    setEventsError(false);
+    try {
+      const res = await fetch("/api/events");
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setEvents(data.results || []);
+    } catch {
+      setEventsError(true);
+    } finally {
+      setEventsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSkyScore(location.lat, location.lng);
+  }, [location.lat, location.lng, fetchSkyScore]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
+
+  function handleLocationChange(lat: number, lng: number, city: string) {
+    setLocation({ lat, lng, city });
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <main className="min-h-screen bg-[#0a0a0f]">
+      {/* Hero background */}
+      <div className="absolute inset-0 bg-hero-gradient pointer-events-none" />
+      {/* Subtle star field */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage: "radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.08) 0%, transparent 100%), radial-gradient(1px 1px at 70% 15%, rgba(255,255,255,0.06) 0%, transparent 100%), radial-gradient(1px 1px at 45% 60%, rgba(255,255,255,0.05) 0%, transparent 100%), radial-gradient(1px 1px at 85% 75%, rgba(255,255,255,0.07) 0%, transparent 100%)",
+      }} />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-20">
+
+        {/* Hero Section */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-500/20 bg-blue-500/5 text-blue-400 text-xs font-medium mb-6 uppercase tracking-widest"
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+            Tonight&apos;s Forecast
+          </motion.div>
+
+          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-2 tracking-tight">
+            Tonight&apos;s Sky Score
+          </h1>
+          <p className="text-slate-500 text-base mb-10">
+            {location.city} — {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
+          </p>
+
+          {/* Score ring */}
+          <div className="flex justify-center mb-8">
+            {skyLoading ? (
+              <div className="w-[220px] h-[220px] rounded-full skeleton" />
+            ) : skyError ? (
+              <div className="flex flex-col items-center gap-3 text-slate-500">
+                <div className="w-[220px] h-[220px] rounded-full border border-white/[0.05] flex items-center justify-center">
+                  <span className="text-sm">Score unavailable</span>
+                </div>
+                <button
+                  onClick={() => fetchSkyScore(location.lat, location.lng)}
+                  className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300"
+                >
+                  <RefreshCw className="w-3 h-3" /> Retry
+                </button>
+              </div>
+            ) : skyScore ? (
+              <SkyScoreRing score={skyScore.score} />
+            ) : null}
+          </div>
+
+          {/* Metrics row */}
+          {skyScore && !skyLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="flex flex-wrap justify-center gap-4 mb-10"
+            >
+              {[
+                { icon: Cloud, label: "Cloud Cover", value: `${skyScore.metrics.cloudCover}%`, color: "#64748b" },
+                { icon: Eye, label: "Light Pollution", value: `${skyScore.metrics.lightPollution}%`, color: "#f59e0b" },
+                { icon: Moon, label: "Moon Brightness", value: `${skyScore.metrics.moonBrightness}%`, color: "#8b5cf6" },
+              ].map(({ icon: Icon, label, value, color }) => (
+                <div
+                  key={label}
+                  className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl bg-white/[0.04] border border-white/[0.06]"
+                >
+                  <Icon className="w-4 h-4" style={{ color }} />
+                  <span className="text-slate-400">{label}:</span>
+                  <span className="text-white font-medium">{value}</span>
+                </div>
+              ))}
+            </motion.div>
+          )}
+
+          {/* Location Picker */}
+          <div className="max-w-md mx-auto">
+            <LocationPicker
+              onLocationChange={handleLocationChange}
+              currentCity={location.city}
+              loading={skyLoading}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+          </div>
+        </motion.section>
+
+        {/* Events Section */}
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-white">Upcoming Events</h2>
+            {!eventsLoading && (
+              <button
+                onClick={fetchEvents}
+                className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-blue-400 transition-colors"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Refresh
+              </button>
+            )}
+          </div>
+
+          {eventsLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array(6).fill(null).map((_, i) => (
+                <EventCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : eventsError ? (
+            <div className="glass-card p-8 text-center">
+              <p className="text-slate-500 mb-3">Failed to load events</p>
+              <button
+                onClick={fetchEvents}
+                className="text-blue-400 text-sm hover:text-blue-300 transition-colors flex items-center gap-1 mx-auto"
+              >
+                <RefreshCw className="w-4 h-4" /> Try again
+              </button>
+            </div>
+          ) : events.length === 0 ? (
+            <div className="glass-card p-8 text-center text-slate-500">
+              No upcoming events found.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {events.map((event, i) => (
+                <EventCard key={event.id} event={event} index={i} />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+    </main>
   );
 }

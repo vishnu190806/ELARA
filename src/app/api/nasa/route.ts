@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiCache } from "@/lib/api-cache";
+import { enhanceWithExplanations } from "@/lib/explanationService";
 
 // EONET (Earth Observatory Natural Event Tracker) API
 const NASA_EONET_URL = "https://eonet.gsfc.nasa.gov/api/v3/events?limit=5";
@@ -27,10 +28,14 @@ export async function GET() {
       throw new Error(`Failed to fetch NASA API: ${res.status}`);
     }
 
-    const data = await res.json();
-    apiCache.set(CACHE_KEY, data, CACHE_TTL);
+    const rawData = await res.json();
+    if (rawData.events) {
+      rawData.events = await enhanceWithExplanations(rawData.events, "nasa");
+    }
+    
+    apiCache.set(CACHE_KEY, rawData, CACHE_TTL);
 
-    return NextResponse.json(data, {
+    return NextResponse.json(rawData, {
       headers: {
          "Cache-Control": `public, s-maxage=${CACHE_TTL}, stale-while-revalidate=59`,
          "X-Cache": "MISS"

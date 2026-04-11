@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiCache } from "@/lib/api-cache";
+import { enhanceWithExplanations } from "@/lib/explanationService";
 
 const SPACE_DEVS_URL = "https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=10";
 const CACHE_KEY = "space_devs_upcoming";
@@ -36,12 +37,15 @@ export async function GET() {
       throw new Error(`Failed to fetch Space Devs API: ${res.status}`);
     }
 
-    const data = await res.json();
+    const rawData = await res.json();
+    if (rawData.results) {
+      rawData.results = await enhanceWithExplanations(rawData.results, "space_devs");
+    }
     
     // 3. Store in memory cache
-    apiCache.set(CACHE_KEY, data, CACHE_TTL);
+    apiCache.set(CACHE_KEY, rawData, CACHE_TTL);
 
-    return NextResponse.json(data, {
+    return NextResponse.json(rawData, {
       headers: {
          "Cache-Control": `public, s-maxage=${CACHE_TTL}, stale-while-revalidate=59`,
          "X-Cache": "MISS"

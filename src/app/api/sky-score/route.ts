@@ -21,12 +21,15 @@ function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const lat = parseFloat(searchParams.get('lat') || '0');
-    const lng = parseFloat(searchParams.get('lng') || '0');
+    const latParam = searchParams.get('lat');
+    const lngParam = searchParams.get('lng');
 
-    if (!lat && !lng) {
+    if (latParam === null || lngParam === null) {
       return NextResponse.json({ error: "Missing lat/lng parameters" }, { status: 400 });
     }
+
+    const lat = parseFloat(latParam);
+    const lng = parseFloat(lngParam);
 
     // 1. Get Cloud Cover (0-100)
     const cloudCover = await getCloudCover(lat, lng);

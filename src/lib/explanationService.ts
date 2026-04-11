@@ -5,25 +5,25 @@ import { SpaceEvent } from "@/types";
 export async function enhanceWithExplanations(events: SpaceEvent[], origin: "space_devs" | "nasa") {
   if (!events || !Array.isArray(events)) return events;
 
-  const results = [...events];
-  
-  // To avoid hitting API rate limits or timeout limits, we only process max 5 at a time
-  const batch = results.slice(0, 5);
-  
   const explanationsRef = adminDb.collection('event_explanations');
+  const enhancedEvents: SpaceEvent[] = [];
   
-  await Promise.all(batch.map(async (event, index) => {
+  // We process events sequentially to avoid hitting Gemini's Free Tier RPM limits (429 errors)
+  for (const event of events) {
     const id = event.id;
     const name = origin === "space_devs" ? event.name : event.title;
     
-    if (!id || !name) return;
+    if (!id || !name) {
+      enhancedEvents.push(event);
+      continue;
+    }
     
     try {
       const doc = await explanationsRef.doc(id).get();
       
       if (doc.exists) {
-        // Cached in Firestore
-        results[index].explanation = doc.data()?.text;
+        // Return existing event with cached explanation
+        enhancedEvents.push({ ...event, explanation: doc.data()?.text });
       } else {
         // Pre-generate with Gemini
         let explanationText = "Explanation temporarily unavailable.";
@@ -46,16 +46,20 @@ export async function enhanceWithExplanations(events: SpaceEvent[], origin: "spa
                createdAt: new Date().toISOString()
              });
           }
+          
+          // Small delay to be extra safe with rate limits
+          await new Promise(resolve => setTimeout(resolve, 100));
         } catch (geminiErr) {
           console.error(`Gemini generation failed for event ${id}:`, geminiErr);
         }
         
-        results[index].explanation = explanationText;
+        enhancedEvents.push({ ...event, explanation: explanationText });
       }
     } catch (err) {
       console.error(`Firestore explanation check failed for event ${id}:`, err);
+      enhancedEvents.push(event);
     }
-  }));
+  }
 
-  return results;
+  return enhancedEvents;
 }

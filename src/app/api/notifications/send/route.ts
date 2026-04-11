@@ -3,6 +3,20 @@ import { admin } from "@/lib/firebase/admin";
 
 export async function POST(request: Request) {
   try {
+    // SECURITY: Authenticate before sending
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: "Unauthorized: Missing Bearer token" }, { status: 401 });
+    }
+
+    const idToken = authHeader.split('Bearer ')[1];
+    try {
+      await admin.auth().verifyIdToken(idToken);
+    } catch (e) {
+      console.error("Auth Token Verification Failed:", e);
+      return NextResponse.json({ error: "Unauthorized: Invalid token" }, { status: 401 });
+    }
+
     const { token, title, body } = await request.json();
 
     if (!token) {
@@ -17,7 +31,7 @@ export async function POST(request: Request) {
       token: token,
       webpush: {
         fcmOptions: {
-          link: "https://elara-space.vercel.app/events",
+          link: `${process.env.NEXT_PUBLIC_APP_URL || "https://elara-space.vercel.app"}/events`,
         },
       },
     };

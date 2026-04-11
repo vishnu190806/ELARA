@@ -39,23 +39,29 @@ export async function GET(request: Request) {
     }
 
     // 4. Send notifications
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://elara-space.vercel.app";
+    
     for (const event of upcomingEvents) {
       const title = `🚀 Launch Alert: ${event.name}`;
       const body = `${event.launch_service_provider.name} is launching from ${event.pad.location.name} in less than an hour!`;
 
-      // Multicast to all tokens
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const message: any = {
-        notification: { title, body },
-        tokens: tokens,
-        webpush: {
-          fcmOptions: {
-            link: `https://elara-space.vercel.app/events/${event.id}`,
+      // Multicast limit is 500 tokens per call
+      for (let i = 0; i < tokens.length; i += 500) {
+        const tokenChunk = tokens.slice(i, i + 500);
+        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const message: any = {
+          notification: { title, body },
+          tokens: tokenChunk,
+          webpush: {
+            fcmOptions: {
+              link: `${appUrl}/events/${event.id}`,
+            },
           },
-        },
-      };
+        };
 
-      await admin.messaging().sendEachForMulticast(message);
+        await admin.messaging().sendEachForMulticast(message);
+      }
     }
 
     return NextResponse.json({ 

@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import SkyScoreRing from "@/components/SkyScoreRing";
 import EventCard, { EventCardSkeleton } from "@/components/EventCard";
 import LocationPicker from "@/components/LocationPicker";
+import { SpaceEvent } from "@/types";
 import { Cloud, Eye, Moon, RefreshCw } from "lucide-react";
 
 interface SkyScore {
@@ -22,7 +23,7 @@ export default function HomePage() {
   const [skyScore, setSkyScore] = useState<SkyScore | null>(null);
   const [skyLoading, setSkyLoading] = useState(true);
   const [skyError, setSkyError] = useState(false);
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<SpaceEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState(false);
 

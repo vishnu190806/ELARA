@@ -1,7 +1,5 @@
-"use client";
-
-import { motion, useSpring, useTransform, useMotionValue, animate } from "framer-motion";
-import { useEffect, useRef } from "react";
+import { motion, useMotionValue, animate } from "framer-motion";
+import { useEffect } from "react";
 
 interface SkyScoreRingProps {
   score: number;
@@ -27,7 +25,6 @@ export default function SkyScoreRing({ score, size = 220 }: SkyScoreRingProps) {
   const strokeDashoffset = circumference * (1 - fillFraction);
 
   const motionVal = useMotionValue(circumference);
-  const displayScore = useRef({ value: 0 });
 
   useEffect(() => {
     const controls = animate(motionVal, strokeDashoffset, {
@@ -35,7 +32,7 @@ export default function SkyScoreRing({ score, size = 220 }: SkyScoreRingProps) {
       ease: [0.34, 1.56, 0.64, 1],
     });
     return controls.stop;
-  }, [strokeDashoffset]);
+  }, [strokeDashoffset, motionVal]);
 
   const center = size / 2;
 

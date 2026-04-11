@@ -8,7 +8,7 @@ type CacheItem<T> = {
 };
 
 class MemoryCache {
-  private cache = new Map<string, CacheItem<any>>();
+  private cache = new Map<string, CacheItem<unknown>>();
 
   set<T>(key: string, data: T, ttlSeconds: number) {
     const expiry = Date.now() + ttlSeconds * 1000;

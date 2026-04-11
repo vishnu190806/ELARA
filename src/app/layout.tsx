@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
 import Navbar from "@/components/Navbar";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import { AuthProvider } from "@/context/AuthContext";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -40,9 +41,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={cn("dark", inter.variable)}>
       <body className="antialiased bg-[#0a0a0f] text-slate-100 min-h-screen">
-        <Navbar />
-        {children}
-        <PWAInstallPrompt />
+        <AuthProvider>
+          <Navbar />
+          {children}
+          <PWAInstallPrompt />
+        </AuthProvider>
       </body>
     </html>
   );

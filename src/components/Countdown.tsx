@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 
 interface CountdownProps {
@@ -26,7 +26,7 @@ function calculateTimeLeft(target: Date): TimeLeft {
 }
 
 export default function Countdown({ targetDate, compact = false }: CountdownProps) {
-  const target = typeof targetDate === "string" ? new Date(targetDate) : targetDate;
+  const target = useMemo(() => (typeof targetDate === "string" ? new Date(targetDate) : targetDate), [targetDate]);
   const [timeLeft, setTimeLeft] = useState<TimeLeft>(calculateTimeLeft(target));
 
   useEffect(() => {

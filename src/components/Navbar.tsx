@@ -4,7 +4,8 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X, MapPin } from "lucide-react";
+import { Menu, X, MapPin, LogIn, LogOut } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -15,6 +16,7 @@ const navItems = [
 export default function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, login, logout } = useAuth();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
@@ -61,19 +63,46 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Location indicator */}
-        <div className="hidden md:flex items-center gap-1.5 text-xs text-slate-500 bg-white/[0.04] px-3 py-1.5 rounded-full border border-white/[0.06]">
-          <MapPin className="w-3 h-3 text-blue-400" />
-          <span>Hyderabad</span>
-        </div>
+        {/* Action Container */}
+        <div className="flex items-center gap-4">
+          {/* Location indicator */}
+          <div className="hidden lg:flex items-center gap-1.5 text-xs text-slate-500 bg-white/[0.04] px-3 py-1.5 rounded-full border border-white/[0.06]">
+            <MapPin className="w-3 h-3 text-blue-400" />
+            <span>Hyderabad</span>
+          </div>
 
-        {/* Mobile hamburger */}
-        <button
-          className="md:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
-          onClick={() => setMobileOpen(!mobileOpen)}
-        >
-          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
+          {/* Auth Button */}
+          {user ? (
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex flex-col items-end">
+                <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Observer</span>
+                <span className="text-xs text-white font-medium max-w-[100px] truncate">{user.displayName}</span>
+              </div>
+              <button
+                onClick={() => logout()}
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all group"
+              >
+                <LogOut className="w-5 h-5 group-hover:text-red-400 transition-colors" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => login()}
+              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2 active:scale-95"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Login</span>
+            </button>
+          )}
+
+          {/* Mobile hamburger */}
+          <button
+            className="md:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+            onClick={() => setMobileOpen(!mobileOpen)}
+          >
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </nav>
 
       {/* Mobile menu */}
@@ -90,7 +119,7 @@ export default function Navbar() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
-                className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
                   pathname === item.href
                     ? "bg-blue-500/10 text-blue-400"
                     : "text-slate-400 hover:text-white hover:bg-white/[0.04]"

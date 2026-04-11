@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import EventCard, { EventCardSkeleton } from "@/components/EventCard";
 import { RefreshCw, Rocket, MapPin, Globe } from "lucide-react";
 
+import { SpaceEvent } from "@/types";
+
 // ISRO-specific events pulled from the events API (Space Devs includes ISRO)
 const ISRO_KEYWORDS = ["ISRO", "GSLV", "PSLV", "LVM", "Chandrayaan", "India", "SDSC", "Satish Dhawan"];
 
@@ -23,7 +25,7 @@ interface ISROStats {
 }
 
 export default function ISROPage() {
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<SpaceEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [factIndex, setFactIndex] = useState(0);
@@ -42,7 +44,7 @@ export default function ISROPage() {
       const res = await fetch("/api/events");
       if (!res.ok) throw new Error();
       const data = await res.json();
-      const all: any[] = data.results || [];
+      const all: SpaceEvent[] = data.results || [];
       const isro = all.filter((e) => {
         const text = `${e.name || ""} ${e.launch_service_provider?.name || ""} ${e.location?.name || ""}`.toUpperCase();
         return ISRO_KEYWORDS.some((kw) => text.includes(kw.toUpperCase()));

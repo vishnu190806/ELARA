@@ -28,8 +28,9 @@ export async function GET() {
       count: STATIC_ZONES.length, 
       message: "Light pollution zones successfully seeded to Firestore." 
     });
-  } catch (error: any) {
-    console.error("Seeding error:", error);
-    return NextResponse.json({ error: "Failed to seed data." }, { status: 500 });
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : "Internal Server Error";
+    console.error("Seeding error:", errorMsg);
+    return NextResponse.json({ error: "Failed to seed data.", details: errorMsg }, { status: 500 });
   }
 }

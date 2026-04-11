@@ -5,22 +5,14 @@ import Link from "next/link";
 import Countdown from "./Countdown";
 import { Calendar, Rocket, Telescope, Zap } from "lucide-react";
 
+import { SpaceEvent } from "@/types";
+
 interface EventCardProps {
-  event: {
-    id: string;
-    name?: string;
-    title?: string;
-    net?: string;
-    window_start?: string;
-    explanation?: string;
-    agency?: { name?: string; abbrev?: string; type?: string };
-    launch_service_provider?: { name?: string; abbrev?: string };
-    type?: string;
-  };
+  event: SpaceEvent;
   index?: number;
 }
 
-function getEventAgency(event: EventCardProps["event"]): string {
+function getEventAgency(event: SpaceEvent): string {
   const lsp = event.launch_service_provider?.abbrev || event.launch_service_provider?.name;
   const agency = event.agency?.abbrev || event.agency?.name;
   return lsp || agency || "Unknown";

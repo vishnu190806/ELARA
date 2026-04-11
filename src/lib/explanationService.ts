@@ -1,7 +1,8 @@
 import { adminDb } from "./firebase/admin";
 import { ai, MODEL } from "./gemini";
+import { SpaceEvent } from "@/types";
 
-export async function enhanceWithExplanations(events: any[], origin: "space_devs" | "nasa") {
+export async function enhanceWithExplanations(events: SpaceEvent[], origin: "space_devs" | "nasa") {
   if (!events || !Array.isArray(events)) return events;
 
   const results = [...events];

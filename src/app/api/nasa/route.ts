@@ -41,10 +41,11 @@ export async function GET() {
          "X-Cache": "MISS"
       }
     });
-  } catch (error: any) {
-    console.error("NASA API Fetch Error:", error);
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : "Internal Server Error";
+    console.error("NASA API Fetch Error:", errorMsg);
     return NextResponse.json(
-      { error: "Internal Server Error while fetching natural events" },
+      { error: "Internal Server Error while fetching natural events", details: errorMsg },
       { status: 500 }
     );
   }

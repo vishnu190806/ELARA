@@ -6,32 +6,17 @@ import { motion } from "framer-motion";
 import Countdown from "@/components/Countdown";
 import {
   ArrowLeft, Calendar, Globe, Telescope, SparklesIcon,
-  MapPin, Clock, ExternalLink, Loader2
+  MapPin, Clock, ExternalLink, Loader2, Bell, Share2
 } from "lucide-react";
+import { SpaceEvent } from "@/types";
 import Link from "next/link";
-
-interface EventDetail {
-  id: string;
-  name?: string;
-  title?: string;
-  net?: string;
-  window_start?: string;
-  window_end?: string;
-  explanation?: string;
-  mission?: { description?: string };
-  launch_service_provider?: { name?: string; abbrev?: string; description?: string; info_url?: string };
-  pad?: { location?: { name?: string; map_url?: string } };
-  location?: { name?: string };
-  image?: string;
-  vidURLs?: Array<{ url?: string; title?: string }>;
-}
 
 export default function EventDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
 
-  const [event, setEvent] = useState<EventDetail | null>(null);
+  const [event, setEvent] = useState<SpaceEvent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -42,7 +27,7 @@ export default function EventDetailPage() {
         const res = await fetch("/api/events");
         if (!res.ok) throw new Error();
         const data = await res.json();
-        const found = (data.results || []).find((e: any) => e.id === id);
+        const found = (data.results || []).find((e: SpaceEvent) => e.id === id);
         if (found) {
           setEvent(found);
         } else {
@@ -239,6 +224,36 @@ export default function EventDetailPage() {
 
           {/* Sidebar */}
           <div className="flex flex-col gap-4">
+            {/* Action Bar */}
+            <motion.div
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="glass-card p-4 flex flex-col gap-3"
+            >
+              <button
+                onClick={() => alert("Notification permissions would be requested here.")}
+                className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-medium transition-all active:scale-95 shadow-lg shadow-blue-600/20"
+              >
+                <Bell className="w-4 h-4" />
+                Set Alert
+              </button>
+              <button
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({ title: name, url: window.location.href });
+                  } else {
+                    navigator.clipboard.writeText(window.location.href);
+                    alert("Link copied to clipboard!");
+                  }
+                }}
+                className="w-full flex items-center justify-center gap-2 bg-white/[0.05] hover:bg-white/[0.1] text-white py-3 rounded-xl font-medium transition-all border border-white/[0.1] active:scale-95"
+              >
+                <Share2 className="w-4 h-4" />
+                Share Event
+              </button>
+            </motion.div>
+
             {/* Countdown */}
             {date && (
               <motion.div

@@ -20,6 +20,7 @@ export async function GET(request: Request) {
     const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
 
     // 2. Filter for events in the next hour
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const upcomingEvents = data.results.filter((event: any) => {
       const eventTime = new Date(event.net || event.window_start);
       return eventTime > now && eventTime <= oneHourFromNow;
@@ -38,17 +39,17 @@ export async function GET(request: Request) {
     }
 
     // 4. Send notifications
-    const sentCount = 0;
     for (const event of upcomingEvents) {
       const title = `🚀 Launch Alert: ${event.name}`;
       const body = `${event.launch_service_provider.name} is launching from ${event.pad.location.name} in less than an hour!`;
 
       // Multicast to all tokens
-      const message = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const message: any = {
         notification: { title, body },
         tokens: tokens,
         webpush: {
-          fcm_options: {
+          fcmOptions: {
             link: `https://elara-space.vercel.app/events/${event.id}`,
           },
         },
@@ -63,8 +64,8 @@ export async function GET(request: Request) {
       subscribersNotified: tokens.length 
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("Cron Job Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

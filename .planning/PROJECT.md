@@ -1,12 +1,12 @@
-# Sky Event Alarm
+# Indian Sky Event Alarm
 
 ## What This Is
 
-An AI-powered sky event alarm web app for Indian users. It tracks NASA and ISRO events (ISS passes, meteor showers, eclipses, ISRO launches, planetary events) and uses AI to explain every event in plain language. It calculates a "tonight's sky score" based on local cloud cover, light pollution, and moon phase, and sends browser notifications before events happen. Built as a Progressive Web App (PWA).
+An AI-powered sky event alarm web app for Indian users that tracks NASA and ISRO events. It provides a personalized "tonight's sky score" based on location, explains events using AI, and sends browser notifications before events occur. Built as a PWA for offline support.
 
 ## Core Value
 
-Clear, contextual, and timely awareness of significant sky events, personalized for the user's location and explained with AI-driven plain language, accessible directly from the browser.
+Timely, accurate, and easily understandable alerts for space events, specifically tailored to users in India, taking into account local viewing conditions.
 
 ## Requirements
 
@@ -20,39 +20,38 @@ Clear, contextual, and timely awareness of significant sky events, personalized 
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] Interactive Dashboard: Tonight's sky score, upcoming events feed, and location selector
-- [ ] Astronomical Data Integration: Track NASA events (ISS passes, meteor showers, eclipses, planetary events) and ISRO launches
-- [ ] AI Explanations: Plain language context and best viewing tips for every event
-- [ ] Sky Score Calculation: Algorithm combining cloud cover, light pollution, and moon phase based on user's location
-- [ ] Notification System: Browser push notifications 30 minutes before selected events
-- [ ] User Alert Settings: Preferences to choose which types of events trigger notifications
-- [ ] ISRO Missions Hub: Dedicated tab for upcoming ISRO launches with AI context
-- [ ] Progressive Web App (PWA): Installable on devices with offline support for cached events
-- [ ] Minimalist Dark Theme: "Deep space" aesthetic, clean, modern (Vercel-like), high information clarity
+- [ ] Implement The Space Devs API for ISRO/rocket launch data with fallback manual curation in Firestore for Gaganyaan.
+- [ ] Integrate NASA Open APIs for general space events (ISS passes, eclipses, etc.).
+- [ ] AI Event Explanations pre-generated via Gemini API and cached in Firestore (triggered on new event ingest).
+- [ ] AI on-the-fly personalized viewing tips (e.g., specific directions based on location).
+- [ ] Sky Score calculation (40% Cloud cover via Open-Meteo, 35% Light pollution from static Firestore lookup, 25% Moon phase via Astronomia JS). Integer 1-10.
+- [ ] Home dashboard with tonight's sky score, upcoming events feed, and location selector.
+- [ ] Event detail page with AI explanation, best viewing tips, and a countdown timer.
+- [ ] PWA setup (installable, offline caching).
+- [ ] Notification settings/preferences (choose which events to get notified about).
+- [ ] Firebase Cloud Messaging for notifications (focused on Android + Desktop Chrome 30 minutes before an event). Warning banner on iOS to "Add to Home Screen".
+- [ ] Deep space dark aesthetic, minimal and clean design ("Vercel design language but for space").
 
 ### Out of Scope
 
 <!-- Explicit boundaries. Includes reasoning to prevent re-adding. -->
 
-- [Telescope Control/Integration] — Focus is on naked-eye or basic binocular observation for the general public, not advanced amateur astronomy equipment.
-- [Real-time Star Map/Planetarium View] — Requires complex WebGL/Canvas rendering that clutters the UI. Focus is on *events* rather than real-time positional tracking.
-- [Community Forums/Social Features] — Current scope is personal utility and awareness. Social features add significant moderation and database overhead.
-- [Mobile App (iOS/Android native)] — PWA fulfills the requirement for installability and push notifications without the overhead of app store deployment and native development.
+- live tracking maps or complex astronomy star maps — would make the UI too cluttered. The design must be clean and modern.
+- scraping the ISRO site for live data — fragile and prone to breaking. Using The Space Devs API instead.
+- iOS push notifications without PWA — iOS Safari notification support is limited, so we handle it uniquely with an Add to Home Screen banner.
 
 ## Context
 
-- **Target Audience:** Indian users interested in space and astronomy, ranging from casual observers to enthusiasts who want plain-language explanations.
+- **Target Audience:** Indian users interested in astronomy and space events. Focus is on 80%+ via Android and Desktop Chrome for notifications.
 - **Tech Stack:** Next.js 14, TypeScript, Tailwind CSS, Firebase (Auth + Firestore + Hosting).
-- **Data Sources:** NASA Open APIs, ISRO launch data APIs/scraping, weather/location APIs for sky score (cloud cover, light pollution, moon phase).
-- **Design Inspiration:** Vercel's design language applied to space. Minimal UI, high signal-to-noise ratio, dark theme.
+- **Design Guidelines:** Dark theme, deep space aesthetic. Clean and modern. Minimal UI with maximum information clarity.
+- **Performance:** AI content needs to be instantaneous for users, hence the generation on ingest and caching in Firestore for major descriptions. On-the-fly generation only for user-location-specific viewing tips.
 
 ## Constraints
 
-- **[Tech Stack]**: Next.js 14, TypeScript, Tailwind CSS, Firebase — Specified by the user; ensures modern, scalable, and type-safe development.
-- **[Deployment]**: Firebase Hosting — Specified by the user; requires Next.js deployment configuration compatible with Firebase.
-- **[Design]**: Minimalist Dark Theme ("Deep Space") — Specified by the user; prohibits cluttered, traditional astronomy app layouts. Needs to feel premium and clean.
-- **[Platform]**: Progressive Web App (PWA) — Must meet PWA criteria (manifest, service worker, offline caching) to allow installation and reliable browser notifications.
-- **[Performance]**: Must load quickly and function offline for cached events — Requirement for the PWA experience.
+- **Tech Stack**: Next.js 14, TypeScript, Tailwind CSS, Firebase (Auth + Firestore + Hosting) — Mandatory per user request.
+- **Cloud Cover APIs**: Must use Open-Meteo for free, keyless access.
+- **Light Pollution data**: Must use static lookup from Firestore per major Indian city to avoid API costs/latency.
 
 ## Key Decisions
 
@@ -60,8 +59,12 @@ Clear, contextual, and timely awareness of significant sky events, personalized 
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Use standard Context API/Zustand for state | App is mostly dashboard/feed based, global state needs aren't exceptionally complex beyond user prefs and current location. | — Pending |
-| AI Integration Approach | Use Gemini API for generating explanations dynamically or pre-generating them for known events to save costs and latency. | — Pending |
+| Use Space Devs API | Provides ISRO filter natively, avoids scraping fragility | — Pending |
+| Pre-generate AI Explanations | Ensures instant load times for users, avoids runtime latency | — Pending |
+| FCM for Notifications | Native to Firebase, handles heavy lifting | — Pending |
+
+---
+*Last updated: 2026-04-11 after initialization*
 
 ## Evolution
 
@@ -79,6 +82,3 @@ This document evolves at phase transitions and milestone boundaries.
 2. Core Value check — still the right priority?
 3. Audit Out of Scope — reasons still valid?
 4. Update Context with current state
-
----
-*Last updated: 2026-04-11 after initialization*

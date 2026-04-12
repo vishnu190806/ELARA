@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { apiCache } from "@/lib/api-cache";
 import { enhanceWithExplanations } from "@/lib/explanationService";
@@ -60,3 +61,4 @@ export async function GET() {
     );
   }
 }
+

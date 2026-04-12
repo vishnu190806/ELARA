@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin";
 
@@ -30,3 +31,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to subscribe" }, { status: 500 });
   }
 }
+

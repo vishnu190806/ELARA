@@ -68,3 +68,4 @@ export async function GET() {
 
   return NextResponse.json({ error: "Failed to determine ISS position" }, { status: 500 });
 }
+

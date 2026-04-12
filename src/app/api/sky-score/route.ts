@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { getCloudCover } from '@/lib/weather';
@@ -84,3 +85,4 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Failed to calculate sky score" }, { status: 500 });
   }
 }
+

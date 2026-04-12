@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { adminDb, admin } from "@/lib/firebase/admin";
 
@@ -75,3 +76,4 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }
+

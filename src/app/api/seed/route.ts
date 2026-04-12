@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 
@@ -34,3 +35,4 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to seed data.", details: errorMsg }, { status: 500 });
   }
 }
+

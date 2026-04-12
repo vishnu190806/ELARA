@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { admin } from "@/lib/firebase/admin";
 
@@ -45,3 +46,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: (error as Error).message || "Failed to send notification" }, { status: 500 });
   }
 }
+

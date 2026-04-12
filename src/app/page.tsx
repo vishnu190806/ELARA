@@ -13,7 +13,7 @@ const SkyMap = dynamic(() => import("@/components/SkyMap"), {
   loading: () => <div className="h-64 rounded-2xl skeleton" />,
 });
 
-const Earth3D = dynamic(() => import("@/components/Earth3D"), {
+const EarthGlobe = dynamic(() => import("@/components/EarthGlobe"), {
   ssr: false,
   loading: () => (
     <div className="w-full h-[420px] flex items-center justify-center">
@@ -116,12 +116,15 @@ export default function HomePage() {
 
           {/* 3D Earth Globe with Sky Score overlay */}
           <div className="relative mb-6">
-            <Earth3D
+            <EarthGlobe
               skyScore={skyScore}
               skyLoading={skyLoading}
               skyError={skyError}
               cityName={location.city}
               onRetry={() => fetchSkyScore(location.lat, location.lng)}
+              events={events}
+              userLat={location.lat}
+              userLng={location.lng}
             />
           </div>
 

@@ -27,12 +27,12 @@ const ISRO_TIMELINE = [
 ];
 
 const timelineColors: Record<string, string> = {
-  blue: "bg-blue-500 text-blue-400 border-blue-500/30",
-  purple: "bg-purple-500 text-purple-400 border-purple-500/30",
-  red: "bg-red-500 text-red-400 border-red-500/30",
-  green: "bg-green-500 text-green-400 border-green-500/30",
-  amber: "bg-amber-500 text-amber-400 border-amber-500/30",
-  cyan: "bg-cyan-500 text-cyan-400 border-cyan-500/30",
+  blue: "bg-blue-500 text-blue-400 border-blue-500/30 ring-blue-500/50",
+  purple: "bg-purple-500 text-purple-400 border-purple-500/30 ring-purple-500/50",
+  red: "bg-red-500 text-red-400 border-red-500/30 ring-red-500/50",
+  green: "bg-green-500 text-green-400 border-green-500/30 ring-green-500/50",
+  amber: "bg-amber-500 text-amber-400 border-amber-500/30 ring-amber-500/50",
+  cyan: "bg-cyan-500 text-cyan-400 border-cyan-500/30 ring-cyan-500/50",
 };
 
 interface ISROStats {
@@ -151,7 +151,7 @@ export default function ISROPage() {
             <div className="flex flex-col gap-0">
               {ISRO_TIMELINE.map((item, i) => {
                 const colors = timelineColors[item.color] || timelineColors.blue;
-                const [dotBg, textColor, borderColor] = colors.split(" ");
+                const [dotBg, textColor, borderColor, ringColor] = colors.split(" ");
                 return (
                   <motion.div
                     key={item.year}
@@ -167,7 +167,7 @@ export default function ISROPage() {
 
                     {/* Dot */}
                     <div className="relative mt-1">
-                      <div className={`w-3 h-3 rounded-full ${dotBg} ring-2 ring-offset-2 ring-offset-[#0a0a0f] ${borderColor} group-hover:scale-125 transition-transform`} />
+                      <div className={`w-3 h-3 rounded-full ${dotBg} ring-2 ring-offset-2 ring-offset-[#0a0a0f] ${borderColor} ${ringColor} group-hover:scale-125 transition-transform`} />
                     </div>
 
                     {/* Content */}

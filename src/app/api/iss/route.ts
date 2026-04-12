@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+let lastKnownPosition = { latitude: "28.6139", longitude: "77.2090" };
+
 export async function GET() {
   try {
     const res = await fetch("http://api.open-notify.org/iss-now.json", {
@@ -11,6 +13,12 @@ export async function GET() {
     });
     if (!res.ok) throw new Error("ISS API error");
     const data = await res.json();
+    
+    lastKnownPosition = {
+      latitude: data.iss_position.latitude,
+      longitude: data.iss_position.longitude,
+    };
+    
     return NextResponse.json(data, {
       headers: {
         "Cache-Control": "no-store, max-age=0",
@@ -18,9 +26,9 @@ export async function GET() {
       },
     });
   } catch {
-    // Return last known position if API fails
+    // Return last known position or Delhi fallback
     return NextResponse.json({
-      iss_position: { latitude: "28.6139", longitude: "77.2090" },
+      iss_position: lastKnownPosition,
       timestamp: Math.floor(Date.now() / 1000),
       message: "success (fallback)",
     });

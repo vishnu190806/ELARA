@@ -20,6 +20,7 @@ export default function StarField() {
   const mouseRef = useRef({ x: 0, y: 0 });
   const animFrameRef = useRef<number>(0);
   const timeRef = useRef(0);
+  const shootingTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   const STAR_COUNT = isMobile ? 800 : 2000;
@@ -52,11 +53,12 @@ export default function StarField() {
 
   const scheduleShootingStar = useCallback((scene: THREE.Scene) => {
     const delay = 8000 + Math.random() * 4000;
-    const timer = setTimeout(() => {
+    clearTimeout(shootingTimerRef.current);
+    shootingTimerRef.current = setTimeout(() => {
       spawnShootingStar(scene);
       scheduleShootingStar(scene);
     }, delay);
-    return timer;
+    return shootingTimerRef.current;
   }, [spawnShootingStar]);
 
   useEffect(() => {
@@ -116,9 +118,8 @@ export default function StarField() {
     starsRef.current = stars;
 
     // Schedule shooting stars
-    let shootingTimer: ReturnType<typeof setTimeout>;
     if (!prefersReduced) {
-      shootingTimer = scheduleShootingStar(scene);
+      scheduleShootingStar(scene);
     }
 
     // Mouse parallax
@@ -183,7 +184,15 @@ export default function StarField() {
 
     return () => {
       cancelAnimationFrame(animFrameRef.current);
-      clearTimeout(shootingTimer);
+      clearTimeout(shootingTimerRef.current);
+      
+      shootingStarsRef.current.forEach((ss) => {
+        if(sceneRef.current) sceneRef.current.remove(ss.mesh);
+        ss.mesh.geometry.dispose();
+        (ss.mesh.material as THREE.Material).dispose();
+      });
+      shootingStarsRef.current = [];
+      
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("resize", handleResize);
       renderer.dispose();

@@ -242,12 +242,18 @@ export default function Earth3D({ skyScore, skyLoading, skyError, cityName, onRe
     return () => {
       cancelAnimationFrame(animFrameRef.current);
       window.removeEventListener("resize", handleResize);
-      renderer.dispose();
-      earthGeometry.dispose();
-      earthMaterial.dispose();
-      texture.dispose();
-      atmosGeometry.dispose();
-      atmosMaterial.dispose();
+      if (renderer) renderer.dispose();
+      if (earthGeometry) earthGeometry.dispose();
+      if (earthMaterial) earthMaterial.dispose();
+      if (texture) texture.dispose();
+      if (atmosGeometry) atmosGeometry.dispose();
+      if (atmosMaterial) atmosMaterial.dispose();
+      if (outerGlowGeo) outerGlowGeo.dispose();
+      if (outerGlowMat) outerGlowMat.dispose();
+      if (issGeometry) issGeometry.dispose();
+      if (issMaterial) issMaterial.dispose();
+      if (issGlow.geometry) issGlow.geometry.dispose();
+      if (issGlow.material) (issGlow.material as THREE.Material).dispose();
       if (container && renderer.domElement.parentNode === container) {
         container.removeChild(renderer.domElement);
       }

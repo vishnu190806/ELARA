@@ -54,8 +54,15 @@ export default function SpaceCursor() {
     const queryInteractive = () =>
       document.querySelectorAll("a, button, [role='button'], input, select, textarea");
 
+    const handledElements = new WeakSet();
+
     const setupHoverListeners = () => {
-      queryInteractive().forEach((el) => { addHover(el); removeHover(el); });
+      queryInteractive().forEach((el) => {
+        if (handledElements.has(el)) return;
+        handledElements.add(el);
+        addHover(el);
+        removeHover(el);
+      });
     };
     setupHoverListeners();
 
@@ -111,7 +118,7 @@ export default function SpaceCursor() {
           transition: width 0.15s ease, height 0.15s ease, border-color 0.2s ease;
         }
         .cursor-clicked .space-cursor-dot {
-          transform: translate(var(--x), var(--y)) scale(0.6);
+          transform: scale(0.6);
           background: rgba(167, 139, 250, 0.9);
         }
         .cursor-hover ~ .space-cursor-ring,

@@ -230,7 +230,9 @@ export default function EventCard({ event, index = 0 }: EventCardProps) {
                       if (navigator.share) {
                         navigator.share({ title: name, url });
                       } else {
-                        navigator.clipboard.writeText(url);
+                        navigator.clipboard.writeText(url)
+                          .then(() => alert("Link copied!"))
+                          .catch(() => alert("Could not copy link"));
                       }
                     }}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] text-white text-xs font-medium border border-white/[0.08] transition-all active:scale-95"

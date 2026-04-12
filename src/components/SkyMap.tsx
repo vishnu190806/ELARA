@@ -65,8 +65,11 @@ function raDecToXY(ra: number, dec: number, lst: number, lat: number, width: num
   const sinAlt = Math.sin(decRad) * Math.sin(latRad) + Math.cos(decRad) * Math.cos(latRad) * Math.cos(haRad);
   const alt = Math.asin(Math.min(1, Math.max(-1, sinAlt)));
 
-  const cosAz = (Math.sin(decRad) - Math.sin(latRad) * sinAlt) / (Math.cos(latRad) * Math.cos(alt));
-  let az = Math.acos(Math.min(1, Math.max(-1, cosAz)));
+  const cosAlt = Math.cos(alt);
+  const azBase = Math.abs(cosAlt) < 1e-12 
+    ? 0  // zenith case
+    : Math.acos(Math.min(1, Math.max(-1, (Math.sin(decRad) - Math.sin(latRad) * sinAlt) / (Math.cos(latRad) * cosAlt))));
+  let az = azBase;
   if (Math.sin(haRad) > 0) az = 2 * Math.PI - az;
 
   if (alt < 0) return null; // below horizon

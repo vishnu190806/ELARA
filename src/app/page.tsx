@@ -2,11 +2,20 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import SkyScoreRing from "@/components/SkyScoreRing";
 import EventCard, { EventCardSkeleton } from "@/components/EventCard";
 import LocationPicker from "@/components/LocationPicker";
 import { SpaceEvent } from "@/types";
 import { Cloud, Eye, Moon, RefreshCw } from "lucide-react";
+import dynamic from "next/dynamic";
+
+const Earth3D = dynamic(() => import("@/components/Earth3D"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[420px] flex items-center justify-center">
+      <div className="w-[160px] h-[160px] rounded-full skeleton" />
+    </div>
+  ),
+});
 
 interface SkyScore {
   score: number;
@@ -70,58 +79,45 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-[#0a0a0f]">
-      {/* Hero background */}
+      {/* Hero background gradient */}
       <div className="absolute inset-0 bg-hero-gradient pointer-events-none" />
-      {/* Subtle star field */}
-      <div className="absolute inset-0 pointer-events-none" style={{
-        backgroundImage: "radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.08) 0%, transparent 100%), radial-gradient(1px 1px at 70% 15%, rgba(255,255,255,0.06) 0%, transparent 100%), radial-gradient(1px 1px at 45% 60%, rgba(255,255,255,0.05) 0%, transparent 100%), radial-gradient(1px 1px at 85% 75%, rgba(255,255,255,0.07) 0%, transparent 100%)",
-      }} />
 
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-20">
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-20">
 
-        {/* Hero Section */}
+        {/* ─── Hero Section ──────────────────────────────────────── */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-12"
         >
+          {/* Live badge */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-500/20 bg-blue-500/5 text-blue-400 text-xs font-medium mb-6 uppercase tracking-widest"
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-500/20 bg-blue-500/5 text-blue-400 text-xs font-medium mb-4 uppercase tracking-widest"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
             Tonight&apos;s Forecast
           </motion.div>
 
-          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-2 tracking-tight">
+          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-1 tracking-tight">
             Tonight&apos;s Sky Score
           </h1>
-          <p className="text-slate-500 text-base mb-10">
+          <p className="text-slate-500 text-base mb-6">
             {location.city} — {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
           </p>
 
-          {/* Score ring */}
-          <div className="flex justify-center mb-8">
-            {skyLoading ? (
-              <div className="w-[220px] h-[220px] rounded-full skeleton" />
-            ) : skyError ? (
-              <div className="flex flex-col items-center gap-3 text-slate-500">
-                <div className="w-[220px] h-[220px] rounded-full border border-white/[0.05] flex items-center justify-center">
-                  <span className="text-sm">Score unavailable</span>
-                </div>
-                <button
-                  onClick={() => fetchSkyScore(location.lat, location.lng)}
-                  className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300"
-                >
-                  <RefreshCw className="w-3 h-3" /> Retry
-                </button>
-              </div>
-            ) : skyScore ? (
-              <SkyScoreRing score={skyScore.score} />
-            ) : null}
+          {/* 3D Earth Globe with Sky Score overlay */}
+          <div className="relative mb-6">
+            <Earth3D
+              skyScore={skyScore}
+              skyLoading={skyLoading}
+              skyError={skyError}
+              cityName={location.city}
+              onRetry={() => fetchSkyScore(location.lat, location.lng)}
+            />
           </div>
 
           {/* Metrics row */}
@@ -130,7 +126,7 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="flex flex-wrap justify-center gap-4 mb-10"
+              className="flex flex-wrap justify-center gap-4 mb-8"
             >
               {[
                 { icon: Cloud, label: "Cloud Cover", value: `${skyScore.metrics.cloudCover}%`, color: "#64748b" },
@@ -159,7 +155,7 @@ export default function HomePage() {
           </div>
         </motion.section>
 
-        {/* Events Section */}
+        {/* ─── Events Section ────────────────────────────────────── */}
         <section>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-white">Upcoming Events</h2>

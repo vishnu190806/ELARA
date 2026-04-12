@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import EventCard, { EventCardSkeleton } from "@/components/EventCard";
 import LocationPicker from "@/components/LocationPicker";
 import { SpaceEvent } from "@/types";
-import { Cloud, Eye, Moon, RefreshCw } from "lucide-react";
+import { Cloud, Eye, Moon, RefreshCw, LayoutGrid, List } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const SkyMap = dynamic(() => import("@/components/SkyMap"), {
@@ -42,6 +42,7 @@ export default function HomePage() {
   const [events, setEvents] = useState<SpaceEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "timeline">("grid");
 
   const fetchSkyScore = useCallback(async (lat: number, lng: number) => {
     setSkyLoading(true);
@@ -182,15 +183,33 @@ export default function HomePage() {
         <section>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-white">Upcoming Events</h2>
-            {!eventsLoading && (
-              <button
-                onClick={fetchEvents}
-                className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-blue-400 transition-colors"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                Refresh
-              </button>
-            )}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center bg-white/[0.04] rounded-lg p-1 border border-white/[0.06]">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`p-1.5 rounded-md transition-colors ${viewMode === "grid" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"}`}
+                  title="Grid View"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode("timeline")}
+                  className={`p-1.5 rounded-md transition-colors ${viewMode === "timeline" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"}`}
+                  title="Timeline View"
+                >
+                  <List className="w-4 h-4" />
+                </button>
+              </div>
+              {!eventsLoading && (
+                <button
+                  onClick={fetchEvents}
+                  className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-blue-400 transition-colors"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Refresh
+                </button>
+              )}
+            </div>
           </div>
 
           {eventsLoading ? (
@@ -214,9 +233,18 @@ export default function HomePage() {
               No upcoming events found.
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className={
+              viewMode === "grid"
+                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                : "relative flex flex-col gap-6 pl-8 before:absolute before:inset-y-0 before:left-[11px] before:w-[2px] before:bg-white/[0.06]"
+            }>
               {events.map((event, i) => (
-                <EventCard key={event.id} event={event} index={i} />
+                <div key={event.id} className={viewMode === "timeline" ? "relative" : ""}>
+                  {viewMode === "timeline" && (
+                    <div className="absolute top-6 -left-[30px] w-4 h-4 rounded-full bg-blue-500/20 border-2 border-blue-400 z-10 shadow-[0_0_10px_rgba(96,165,250,0.5)]" />
+                  )}
+                  <EventCard event={event} index={i} />
+                </div>
               ))}
             </div>
           )}

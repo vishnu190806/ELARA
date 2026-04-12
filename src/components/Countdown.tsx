@@ -64,29 +64,30 @@ export default function Countdown({ targetDate, compact = false }: CountdownProp
   ];
 
   return (
-    <div className="flex gap-3">
+    <div className="flex" style={{ maxWidth: '100%', overflow: 'hidden', gap: 'clamp(4px, 1vw, 12px)' }}>
       {units.map(({ label, value }) => (
-        <div key={label} className="flex flex-col items-center">
+        <div key={label} className="flex flex-col items-center" style={{ minWidth: 0, flex: 1 }}>
           <motion.div
             key={value}
             initial={{ y: -8, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className={`w-14 h-14 rounded-xl flex items-center justify-center relative ${
+            className={`w-full aspect-square max-w-[3.5rem] rounded-xl flex items-center justify-center relative ${
               isUrgent
                 ? "bg-amber-500/10 border border-amber-500/30"
                 : "bg-white/[0.04] border border-white/[0.06]"
             }`}
+            style={{ padding: 'clamp(8px, 1.5vw, 16px)' }}
           >
             {isUrgent && (
               <span className="absolute inset-0 rounded-xl animate-ping bg-amber-500/10 pointer-events-none" />
             )}
-            <span className={`text-2xl font-bold font-mono ${
+            <span className={`font-bold font-mono ${
               isUrgent ? "text-amber-400" : "text-white"
-            }`}>
+            }`} style={{ fontSize: 'clamp(0.875rem, 2.5vw, 2rem)' }}>
               {String(value).padStart(2, "0")}
             </span>
           </motion.div>
-          <span className="text-xs text-slate-500 mt-1 uppercase tracking-wider">
+          <span className="text-[10px] sm:text-xs text-slate-500 mt-1 uppercase tracking-wider truncate w-full text-center">
             {label}
           </span>
         </div>

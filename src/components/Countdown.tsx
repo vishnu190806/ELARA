@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface CountdownProps {
   targetDate: string | Date;
@@ -67,11 +67,8 @@ export default function Countdown({ targetDate, compact = false }: CountdownProp
     <div className="flex" style={{ maxWidth: '100%', overflow: 'hidden', gap: 'clamp(4px, 1vw, 12px)' }}>
       {units.map(({ label, value }) => (
         <div key={label} className="flex flex-col items-center" style={{ minWidth: 0, flex: 1 }}>
-          <motion.div
-            key={value}
-            initial={{ y: -8, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className={`w-full aspect-square max-w-[3.5rem] rounded-xl flex items-center justify-center relative ${
+          <div
+            className={`w-full aspect-square max-w-[3.5rem] rounded-xl relative [perspective:1000px] overflow-hidden ${
               isUrgent
                 ? "bg-amber-500/10 border border-amber-500/30"
                 : "bg-white/[0.04] border border-white/[0.06]"
@@ -81,12 +78,24 @@ export default function Countdown({ targetDate, compact = false }: CountdownProp
             {isUrgent && (
               <span className="absolute inset-0 rounded-xl animate-ping bg-amber-500/10 pointer-events-none" />
             )}
-            <span className={`font-bold font-mono ${
-              isUrgent ? "text-amber-400" : "text-white"
-            }`} style={{ fontSize: 'clamp(0.875rem, 2.5vw, 2rem)' }}>
-              {String(value).padStart(2, "0")}
-            </span>
-          </motion.div>
+            <AnimatePresence mode="popLayout">
+              <motion.div
+                key={value}
+                initial={{ rotateX: 90, y: -10, opacity: 0 }}
+                animate={{ rotateX: 0, y: 0, opacity: 1 }}
+                exit={{ rotateX: -90, y: 10, opacity: 0 }}
+                transition={{ duration: 0.3, type: "spring", bounce: 0.2 }}
+                className={`absolute inset-0 flex items-center justify-center font-bold font-mono ${
+                  isUrgent ? "text-amber-400" : "text-white"
+                }`}
+                style={{ fontSize: 'clamp(0.875rem, 2.5vw, 2rem)', transformOrigin: 'center center' }}
+              >
+                {String(value).padStart(2, "0")}
+              </motion.div>
+            </AnimatePresence>
+            {/* Split line for flip clock effect */}
+            <div className="absolute top-1/2 left-0 w-full h-px bg-black/50 z-10 -translate-y-1/2" />
+          </div>
           <span className="text-[10px] sm:text-xs text-slate-500 mt-1 uppercase tracking-wider truncate w-full text-center">
             {label}
           </span>

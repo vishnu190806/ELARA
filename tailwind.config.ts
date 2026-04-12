@@ -43,13 +43,22 @@ const config: Config = {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "space-gradient": "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59,130,246,0.15), transparent)",
         "hero-gradient": "radial-gradient(ellipse 60% 60% at 50% 0%, rgba(139,92,246,0.2) 0%, rgba(59,130,246,0.1) 40%, transparent 70%)",
+        "isro-gradient": "linear-gradient(-45deg, rgba(255, 153, 51, 0.15), rgba(255, 255, 255, 0.05), rgba(18, 136, 7, 0.15))",
+      },
+      backgroundSize: {
+        "300%": "300% 300%",
       },
       animation: {
         "spin-slow": "spin 8s linear infinite",
         "pulse-slow": "pulse 3s ease-in-out infinite",
         "shimmer": "shimmer 2s linear infinite",
+        "gradient-shift": "gradient-shift 8s ease infinite",
       },
       keyframes: {
+        "gradient-shift": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
         shimmer: {
           "0%": { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },

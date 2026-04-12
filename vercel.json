@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/refresh-tle",
+      "schedule": "0 */2 * * *"
+    },
+    {
+      "path": "/api/cron/check-events",
+      "schedule": "0 * * * *"
+    }
+  ]
+}

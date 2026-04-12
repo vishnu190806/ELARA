@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import Countdown from "@/components/Countdown";
 import RocketSVG from "@/components/RocketSVG";
 import {
-  ArrowLeft, Calendar, Globe, Telescope, SparklesIcon,
+  ArrowLeft, Calendar, Globe, Telescope, Sparkles,
   MapPin, Clock, ExternalLink, Loader2, Bell, Share2,
   Rocket, RefreshCw, Satellite, Target, Weight
 } from "lucide-react";
@@ -211,7 +211,7 @@ export default function EventDetailPage() {
             >
               <div className="flex items-center gap-2 mb-4">
                 <div className="p-1.5 rounded-lg bg-blue-500/10">
-                  <SparklesIcon className="w-4 h-4 text-blue-400" />
+                  <Sparkles className="w-4 h-4 text-blue-400" />
                 </div>
                 <h2 className="font-semibold text-white text-sm">AI Explanation</h2>
                 <span className="text-xs text-slate-600 ml-auto">Powered by Gemini</span>

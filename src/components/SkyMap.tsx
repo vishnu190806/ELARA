@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Info, X, MapPin } from "lucide-react";
+import { MapPin, X, Target, Crosshair, Zap, Activity, Info } from "lucide-react";
 
 // Curated bright stars with RA/Dec, magnitude, and metadata
-const STARS = [
+export type Star = { name: string; ra: number; dec: number; mag: number; color: string; desc?: string; const?: string; };
+const STARS: Star[] = [
   { name: "Sirius", ra: 6.75, dec: -16.72, mag: -1.46, color: "#b3d4ff", desc: "The brightest star in the night sky, also known as the Dog Star.", const: "Canis Major" },
   { name: "Canopus", ra: 6.40, dec: -52.70, mag: -0.72, color: "#ffffd0", desc: "A supergiant star and the second-brightest in the sky.", const: "Carina" },
   { name: "Arcturus", ra: 14.26, dec: 19.18, mag: -0.05, color: "#ffaa44", desc: "A red giant star and the brightest in the northern celestial hemisphere.", const: "Boötes" },
@@ -79,10 +80,11 @@ export default function SkyMap({ lat = 17.385, lng = 78.487 }: SkyMapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   // Interactions
-  const positionsRef = useRef<Array<{ x: number; y: number; alt: number; star: (typeof STARS)[0] }>>([]);
-  const [hoveredStar, setHoveredStar] = useState<(typeof STARS)[0] | null>(null);
-  const [selectedStar, setSelectedStar] = useState<(typeof STARS)[0] | null>(null);
+  const positionsRef = useRef<Array<{ x: number; y: number; alt: number; star: Star }>>([]);
+  const [hoveredStar, setHoveredStar] = useState<Star | null>(null);
+  const [selectedStar, setSelectedStar] = useState<Star | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [timeOffsetHours, setTimeOffsetHours] = useState(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -92,43 +94,55 @@ export default function SkyMap({ lat = 17.385, lng = 78.487 }: SkyMapProps) {
 
     let animFrame: number;
     const startTime = Date.now();
-    const starIndex = Object.fromEntries(STARS.map((s, i) => [s.name, i]));
 
     const draw = () => {
       const W = canvas.width;
       const H = canvas.height;
 
       const elapsed = (Date.now() - startTime) / 1000;
-      const now = new Date(Date.now() + elapsed * 60000); // 1s real = 1m simulation
+      const now = new Date(Date.now() + elapsed * 60000 + timeOffsetHours * 3600000);
       const lst = getLST(now, lng);
 
       ctx.clearRect(0, 0, W, H);
 
-      // Deep space background
+      // Gradient Background
       const bg = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.min(W, H) / 2);
-      bg.addColorStop(0, "#0c0c1a");
-      bg.addColorStop(0.5, "#080812");
-      bg.addColorStop(1, "#020208");
+      bg.addColorStop(0, "#080812");
+      bg.addColorStop(0.6, "#04040a");
+      bg.addColorStop(1, "#020205");
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, W, H);
 
-      // Zenith and Horizon
-      ctx.strokeStyle = "rgba(100,120,180,0.15)";
+      // GRID & HUD LINES
+      ctx.strokeStyle = "rgba(59, 130, 246, 0.05)";
       ctx.lineWidth = 1;
+      // Circular Grids
+      for(let r=0.1; r<=0.5; r+=0.1) {
+         ctx.beginPath();
+         ctx.arc(W/2, H/2, Math.min(W,H)*r, 0, Math.PI*2);
+         ctx.stroke();
+      }
+      // Radial Grids
+      for(let a=0; a<360; a+=30) {
+         const aRad = (a * Math.PI) / 180;
+         ctx.beginPath();
+         ctx.moveTo(W/2, H/2);
+         ctx.lineTo(W/2 + Math.min(W,H)*0.47 * Math.cos(aRad), H/2 + Math.min(W,H)*0.47 * Math.sin(aRad));
+         ctx.stroke();
+      }
+
+      // MAIN HORIZON
+      ctx.strokeStyle = "rgba(59, 130, 246, 0.2)";
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.arc(W / 2, H / 2, Math.min(W, H) * 0.47, 0, Math.PI * 2);
       ctx.stroke();
 
-      ctx.fillStyle = "rgba(150,160,255,0.2)";
-      ctx.beginPath();
-      ctx.arc(W / 2, H / 2, 2, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Compass labels
+      // Compass labels (Tactical)
       const compassRadius = Math.min(W, H) * 0.49;
-      const labels = [{ label: "N", a: 270 }, { label: "E", a: 0 }, { label: "S", a: 90 }, { label: "W", a: 180 }];
-      ctx.font = "12px monospace";
-      ctx.fillStyle = "rgba(140,160,220,0.6)";
+      const labels = [{ label: "NORTH [000]", a: 270 }, { label: "EAST [090]", a: 0 }, { label: "SOUTH [180]", a: 90 }, { label: "WEST [270]", a: 180 }];
+      ctx.font = "bold 9px 'JetBrains Mono', monospace";
+      ctx.fillStyle = "rgba(59, 130, 246, 0.5)";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       labels.forEach(({ label, a }) => {
@@ -144,35 +158,37 @@ export default function SkyMap({ lat = 17.385, lng = 78.487 }: SkyMapProps) {
       });
       positionsRef.current = positions;
 
-      // Draw Constellation lines
+      // Draw Constellation lines (Animated Glow)
       CONSTELLATION_LINES.forEach(([n1, n2]) => {
         const p1 = positions.find(p => p.star.name === n1);
         const p2 = positions.find(p => p.star.name === n2);
         if (!p1 || !p2) return;
-        ctx.strokeStyle = "rgba(100,140,255,0.15)";
+        ctx.strokeStyle = "rgba(59, 130, 246, 0.15)";
         ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
         ctx.beginPath();
         ctx.moveTo(p1.x, p1.y);
         ctx.lineTo(p2.x, p2.y);
         ctx.stroke();
+        ctx.setLineDash([]);
       });
 
-      // Draw Stars
+      // Draw Stars (Premium rendering)
       const t = Date.now() / 1000;
       positions.forEach(({ x, y, alt, star }, idx) => {
-        const magScale = Math.max(0.5, 3.5 - star.mag);
-        const r = magScale * 0.9;
-        const twinkle = 0.7 + 0.3 * Math.sin(t * (2 + idx * 0.3) + idx);
+        const magScale = Math.max(0.6, 4 - star.mag);
+        const r = magScale * 1.1;
+        const twinkle = 0.8 + 0.2 * Math.sin(t * (3 + idx * 0.5) + idx);
         const opacity = Math.min(1, (alt / (Math.PI / 4)) * twinkle);
 
-        // Highlight if hovered/selected
         const isHovered = hoveredStar?.name === star.name;
         const isSelected = selectedStar?.name === star.name;
 
-        if (star.mag < 1.5 || isHovered || isSelected) {
-          const glowSize = isSelected || isHovered ? r * 8 : r * 4;
+        // Visual Glow
+        if (star.mag < 1.0 || isHovered || isSelected) {
+          const glowSize = isSelected || isHovered ? r * 12 : r * 6;
           const grd = ctx.createRadialGradient(x, y, 0, x, y, glowSize);
-          grd.addColorStop(0, `${star.color}${isSelected ? '88' : '44'}`);
+          grd.addColorStop(0, `${star.color}${isSelected ? '55' : '33'}`);
           grd.addColorStop(1, "transparent");
           ctx.fillStyle = grd;
           ctx.globalAlpha = opacity;
@@ -181,19 +197,32 @@ export default function SkyMap({ lat = 17.385, lng = 78.487 }: SkyMapProps) {
           ctx.fill();
         }
 
+        // Star Core
         ctx.globalAlpha = opacity;
         ctx.fillStyle = star.color;
         ctx.beginPath();
         ctx.arc(x, y, isSelected ? r * 1.5 : r, 0, Math.PI * 2);
         ctx.fill();
 
-        if (star.mag < 1.0 || isHovered || isSelected) {
-          ctx.globalAlpha = isHovered || isSelected ? 1 : opacity * 0.6;
-          ctx.fillStyle = isSelected ? "#fff" : "rgba(180,200,255,0.8)";
-          ctx.font = isSelected ? "bold 11px sans-serif" : "9px sans-serif";
+        // Crosshair for selected
+        if (isSelected) {
+            ctx.strokeStyle = "rgba(59, 130, 246, 0.8)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x - 15, y); ctx.lineTo(x + 15, y);
+            ctx.moveTo(x, y - 15); ctx.lineTo(x, y + 15);
+            ctx.stroke();
+            ctx.beginPath(); ctx.arc(x, y, 20, 0, Math.PI*2); ctx.stroke();
+        }
+
+        // Labels
+        if (star.mag < 0.8 || isHovered || isSelected) {
+          ctx.globalAlpha = isHovered || isSelected ? 1 : opacity * 0.7;
+          ctx.fillStyle = isSelected ? "#fff" : "rgba(180, 210, 255, 0.9)";
+          ctx.font = isSelected ? "bold 10px 'JetBrains Mono', monospace" : "bold 8px 'Inter', sans-serif";
           ctx.textAlign = "center";
           ctx.textBaseline = "top";
-          ctx.fillText(star.name, x, y + r + 4);
+          ctx.fillText(star.name.toUpperCase(), x, y + r + 6);
         }
       });
 
@@ -207,7 +236,6 @@ export default function SkyMap({ lat = 17.385, lng = 78.487 }: SkyMapProps) {
       canvas.height = canvas.offsetHeight;
     });
     resizeObserver.observe(canvas);
-
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
     draw();
@@ -216,7 +244,7 @@ export default function SkyMap({ lat = 17.385, lng = 78.487 }: SkyMapProps) {
       cancelAnimationFrame(animFrame);
       resizeObserver.disconnect();
     };
-  }, [lat, lng, hoveredStar, selectedStar]);
+  }, [lat, lng, hoveredStar, selectedStar, timeOffsetHours]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -226,23 +254,22 @@ export default function SkyMap({ lat = 17.385, lng = 78.487 }: SkyMapProps) {
     const y = e.clientY - rect.top;
     setMousePos({ x, y });
 
-    let minDist = 20;
-    let closest = null;
-    positionsRef.current.forEach(({ x: px, y: py, star }) => {
-      const d = Math.sqrt((px - x) ** 2 + (py - y) ** 2);
+    let minDist = 25;
+    let closest: Star | null = null;
+    for (const pos of positionsRef.current) {
+      const d = Math.max(Math.abs(pos.x - x), Math.abs(pos.y - y));
       if (d < minDist) {
         minDist = d;
-        closest = star;
+        closest = pos.star;
       }
-    });
+    }
     
-    // Only hover stars with a description
-    if (closest && (closest as any).desc) {
+    if (closest) {
       setHoveredStar(closest);
-      canvas.style.cursor = "pointer";
+      canvas.style.cursor = "crosshair";
     } else {
       setHoveredStar(null);
-      canvas.style.cursor = "crosshair";
+      canvas.style.cursor = "default";
     }
   };
 
@@ -252,26 +279,34 @@ export default function SkyMap({ lat = 17.385, lng = 78.487 }: SkyMapProps) {
   };
 
   return (
-    <div className="bg-[#0f111a]/80 backdrop-blur-md rounded-3xl border border-white/10 p-6 flex flex-col h-full relative group overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-fuchsia-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+    <div className="bg-[#05050a] rounded-[2.5rem] border border-white/[0.05] p-2 flex flex-col h-full relative group overflow-hidden shadow-2xl">
       
-      <div className="flex justify-between items-start mb-4 relative z-10">
+      {/* HUD Frame */}
+      <div className="absolute inset-4 border border-blue-500/10 rounded-[2rem] pointer-events-none" />
+      <div className="absolute top-8 left-8 flex items-center gap-3 z-10">
+         <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+         <span className="text-[9px] font-black text-blue-500/60 uppercase tracking-[0.4em]">Celestial Array: Online</span>
+      </div>
+
+      <div className="flex justify-between items-start px-8 pt-8 pb-4 relative z-10">
         <div>
-          <h3 className="text-xl font-bold text-white flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-indigo-400" />
-            Live Celestial Sphere
+          <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter flex items-center gap-3">
+            <Target className="w-6 h-6 text-blue-500" />
+            Stellar Scope
           </h3>
-          <p className="text-sm text-slate-400 mt-1">
-            Star projections optimized for your location
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">
+             Optical Reference Frame: <span className="text-blue-400">Zenith</span>
           </p>
         </div>
-        <div className="px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-          <span className="text-xs font-semibold text-indigo-300 uppercase tracking-wider hidden sm:inline">Real-time</span>
+        <div className="flex gap-2">
+           <div className="px-3 py-1.5 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-2">
+              <Activity className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="text-[10px] font-mono text-slate-400">UTC: {new Date().toISOString().slice(11,19)}</span>
+           </div>
         </div>
       </div>
 
-      <div className="relative flex-grow min-h-[300px] w-full border border-white/5 rounded-2xl overflow-hidden bg-black/40 cursor-crosshair">
+      <div className="relative flex-grow min-h-[400px] w-full border-y border-white/[0.03] overflow-hidden bg-[#020205]">
         <canvas 
           ref={canvasRef} 
           className="w-full h-full block" 
@@ -280,78 +315,86 @@ export default function SkyMap({ lat = 17.385, lng = 78.487 }: SkyMapProps) {
           onClick={handleClick}
         />
         
-        {/* Dynamic Canvas Hover Tooltip */}
-        {hoveredStar && !selectedStar && (
-          <div 
-            className="absolute pointer-events-none transform -translate-x-1/2 -translate-y-[120%] bg-white/10 backdrop-blur-md px-2 py-1 rounded text-xs text-white border border-white/20 whitespace-nowrap shadow-xl z-20"
-            style={{ left: mousePos.x, top: mousePos.y }}
-          >
-            {hoveredStar.name} <span className="opacity-50 ml-1">Mag {hoveredStar.mag}</span>
-          </div>
-        )}
-
-        {/* Legend */}
-        <div className="absolute bottom-3 left-3 flex flex-col gap-1.5 pointer-events-none bg-black/40 backdrop-blur-md p-2.5 rounded-xl border border-white/10">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-indigo-400/50 shadow-[0_0_8px_rgba(129,140,248,0.5)]" />
-            <span className="text-slate-300 text-[10px] uppercase font-semibold tracking-wider">Zenith</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-px bg-indigo-400/30" />
-            <span className="text-slate-300 text-[10px] uppercase font-semibold tracking-wider">Constellations</span>
-          </div>
+        {/* Interactive Overlay Elements */}
+        {/* Time Controller */}
+        <div className="absolute bottom-10 left-10 right-10 flex flex-col items-center gap-3">
+            <div className="w-full max-w-sm flex items-center gap-4 bg-black/60 backdrop-blur-2xl px-6 py-3 rounded-full border border-white/10 shadow-3xl">
+               <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">-12H</span>
+               <input 
+                 type="range" min="-12" max="12" step="0.1" value={timeOffsetHours}
+                 onChange={(e) => setTimeOffsetHours(parseFloat(e.target.value))}
+                 className="flex-grow h-1.5 bg-white/10 rounded-full appearance-none outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(59,130,246,0.5)] cursor-pointer"
+               />
+               <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">+12H</span>
+            </div>
+            {timeOffsetHours !== 0 && (
+               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-[9px] font-black text-blue-400 uppercase tracking-widest bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
+                  TEMPORAL SHIFT: {timeOffsetHours > 0 ? '+' : ''}{timeOffsetHours.toFixed(1)}H
+               </motion.div>
+            )}
         </div>
 
-        {/* Selected Star Info Panel */}
+        {/* Selected Star Details Card */}
         <AnimatePresence>
           {selectedStar && (
             <motion.div
-              initial={{ x: 20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 20, opacity: 0 }}
-              className="absolute top-3 right-3 w-48 sm:w-64 bg-[#0a0a0f]/90 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-2xl z-30"
+              initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 50, opacity: 0 }}
+              className="absolute top-8 right-8 w-72 bg-[#0a0a0f]/90 backdrop-blur-3xl border border-white/10 rounded-3xl p-6 shadow-4xl z-30"
             >
-              <button 
-                onClick={(e) => { e.stopPropagation(); setSelectedStar(null); }}
-                className="absolute top-2 right-2 p-1 text-slate-400 hover:text-white transition-colors rounded-lg bg-white/5 hover:bg-white/10"
-              >
-                <X className="w-4 h-4" />
-              </button>
-              
-              <div className="flex items-center gap-3 mb-3 pr-6">
-                <div 
-                  className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-white/20"
-                  style={{ background: `radial-gradient(circle, ${selectedStar.color}20 0%, transparent 100%)` }}
-                >
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: selectedStar.color, boxShadow: `0 0 15px ${selectedStar.color}` }} />
-                </div>
-                <div>
-                  <h4 className="font-bold text-white text-lg leading-none">{selectedStar.name}</h4>
-                  {"const" in selectedStar && (
-                    <p className="text-xs text-indigo-300 mt-1 uppercase tracking-wider font-semibold">{(selectedStar as any).const}</p>
-                  )}
-                </div>
+              <div className="flex items-center justify-between mb-6">
+                 <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                       <Crosshair className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div>
+                        <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Selected Unit</h4>
+                        <div className="text-xl font-black text-white italic uppercase tracking-tighter">{selectedStar.name}</div>
+                    </div>
+                 </div>
+                 <button onClick={() => setSelectedStar(null)} className="p-2 bg-white/5 rounded-xl hover:bg-white/10 transition-colors text-slate-500 hover:text-white">
+                    <X className="w-4 h-4" />
+                 </button>
               </div>
 
-              {("desc" in selectedStar) && (
-                <p className="text-xs text-slate-300 leading-relaxed mb-4 pb-4 border-b border-white/10">
-                  {(selectedStar as any).desc}
-                </p>
-              )}
-
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                  <span className="text-slate-500 block mb-0.5 font-medium uppercase text-[10px]">Apparent Mag</span>
-                  <span className="text-white font-mono">{selectedStar.mag}</span>
-                </div>
-                <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                  <span className="text-slate-500 block mb-0.5 font-medium uppercase text-[10px]">RA</span>
-                  <span className="text-white font-mono">{selectedStar.ra.toFixed(2)}h</span>
-                </div>
+              <div className="space-y-4">
+                 <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(56,189,248,1)]" />
+                    <span className="text-[9px] font-black text-blue-400 uppercase tracking-[0.2em]">{selectedStar.const || "Void"}</span>
+                 </div>
+                 <p className="text-[11px] text-slate-400 leading-relaxed italic border-l-2 border-blue-500/20 pl-4">
+                    "{selectedStar.desc}"
+                 </p>
+                 <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
+                    <div className="p-3 bg-white/[0.02] border border-white/5 rounded-2xl">
+                       <span className="text-[8px] text-slate-500 uppercase block mb-1">Magnitude</span>
+                       <span className="text-xs font-bold text-white mono tracking-widest">{selectedStar.mag}</span>
+                    </div>
+                    <div className="p-3 bg-white/[0.02] border border-white/5 rounded-2xl">
+                       <span className="text-[8px] text-slate-500 uppercase block mb-1">RA Vector</span>
+                       <span className="text-xs font-bold text-white mono tracking-widest">{selectedStar.ra.toFixed(2)}H</span>
+                    </div>
+                 </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+
+      <div className="p-8 flex items-center justify-between bg-white/[0.01]">
+         <div className="flex gap-6">
+            <div className="flex items-center gap-2">
+               <div className="w-2 h-2 rounded-full border border-blue-500/40" />
+               <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Reference Grid</span>
+            </div>
+            <div className="flex items-center gap-2">
+               <div className="w-4 h-[1px] bg-blue-500/30" />
+               <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Link Vectors</span>
+            </div>
+         </div>
+         <div className="flex items-center gap-3">
+            <Info className="w-4 h-4 text-slate-600" />
+            <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Press Star to Lock-In</span>
+         </div>
       </div>
     </div>
   );

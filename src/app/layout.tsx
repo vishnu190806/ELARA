@@ -44,9 +44,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={cn("dark", inter.variable)}>
-      <body className="antialiased bg-[#0a0a0f] text-slate-100 min-h-screen">
+      <body className="antialiased bg-[#0a0a0f] text-slate-100 min-h-screen relative">
         <StarField />
         <SpaceCursor />
+        {/* Global Elite Effects */}
+        <div className="fixed inset-0 pointer-events-none z-[100] overflow-hidden mix-blend-overlay opacity-50">
+          <div className="scan-line" />
+        </div>
+        <div className="crt-overlay fixed inset-0 opacity-40 mix-blend-multiply z-[90]" />
+        
         <AuthProvider>
           <Navbar />
           {children}

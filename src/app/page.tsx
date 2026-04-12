@@ -1,23 +1,87 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import EventCard, { EventCardSkeleton } from "@/components/EventCard";
 import LocationPicker from "@/components/LocationPicker";
 import { SpaceEvent } from "@/types";
-import { Cloud, Eye, Moon, RefreshCw, LayoutGrid, List, Rocket } from "lucide-react";
+import { Cloud, Eye, Moon, RefreshCw, LayoutGrid, List, Rocket, Sparkles, Navigation, Map } from "lucide-react";
 import dynamic from "next/dynamic";
+import { cn } from "@/lib/utils";
 
 const SkyMap = dynamic(() => import("@/components/SkyMap"), {
   ssr: false,
-  loading: () => <div className="h-64 rounded-[2rem] skeleton" />,
+  loading: () => <div className="h-full min-h-[400px] rounded-[2.5rem] bg-white/[0.02] border border-white/5 animate-pulse" />,
 });
+
+function ISSLiveStatsBar() {
+  const [telemetry, setTelemetry] = useState<{ lat: string; lng: string; alt: string; speed: string; source: string } | null>(null);
+  
+  useEffect(() => {
+    const fetchTelemetry = () => {
+      fetch("/api/iss-position")
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.lat !== undefined && data.lng !== undefined) {
+             setTelemetry({
+               lat: parseFloat(data.lat).toFixed(4),
+               lng: parseFloat(data.lng).toFixed(4),
+               alt: parseFloat(data.altitude).toFixed(1),
+               speed: parseFloat(data.velocity).toLocaleString(undefined, { maximumFractionDigits: 0 }),
+               source: data.source || "unknown"
+             });
+          }
+        })
+        .catch(err => console.error("Failed to fetch position", err));
+    };
+
+    fetchTelemetry();
+    const iv = setInterval(fetchTelemetry, 10000); 
+    return () => clearInterval(iv);
+  }, []);
+
+  if (!telemetry) return (
+     <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full w-fit backdrop-blur-md">
+       <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+       <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em]">CONNECTING ISS...</span>
+     </div>
+  );
+
+  return (
+     <div className="flex items-center gap-4 bg-black/40 border border-white/10 rounded-2xl p-4 backdrop-blur-md pointer-events-auto">
+        <div className="flex flex-col">
+           <div className="flex items-center gap-2 mb-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+              <span className="text-[9px] font-bold text-blue-400 uppercase tracking-widest">LIVE ISS TELEMETRY</span>
+           </div>
+           <div className="flex items-center gap-6 mt-1">
+              <div>
+                 <span className="text-[10px] text-slate-400 mr-2 uppercase">LAT</span>
+                 <span className="text-sm text-white font-mono">{telemetry.lat}°</span>
+              </div>
+              <div>
+                 <span className="text-[10px] text-slate-400 mr-2 uppercase">LNG</span>
+                 <span className="text-sm text-white font-mono">{telemetry.lng}°</span>
+              </div>
+              <div className="hidden sm:block">
+                 <span className="text-[10px] text-slate-400 mr-2 uppercase">ALT</span>
+                 <span className="text-sm text-white font-mono">{telemetry.alt} KM</span>
+              </div>
+              <div className="hidden md:block">
+                 <span className="text-[10px] text-slate-400 mr-2 uppercase">SPD</span>
+                 <span className="text-sm text-emerald-400 font-mono">{telemetry.speed} KM/H</span>
+              </div>
+           </div>
+        </div>
+     </div>
+  );
+}
 
 const EarthGlobe = dynamic(() => import("@/components/EarthGlobe"), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full flex items-center justify-center">
-      <div className="w-[200px] h-[200px] rounded-full skeleton" />
+      <div className="w-[300px] h-[300px] rounded-full bg-blue-500/10 blur-3xl animate-pulse" />
     </div>
   ),
 });
@@ -43,6 +107,12 @@ export default function HomePage() {
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "timeline">("grid");
+  const [systemReady, setSystemReady] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSystemReady(true), 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const fetchSkyScore = useCallback(async (lat: number, lng: number) => {
     setSkyLoading(true);
@@ -81,216 +151,211 @@ export default function HomePage() {
     fetchEvents();
   }, [fetchEvents]);
 
-  function handleLocationChange(lat: number, lng: number, city: string) {
-    setLocation({ lat, lng, city });
-  }
-
   return (
-    <main className="min-h-screen bg-[#0a0a0f] text-slate-300 font-sans scroll-smooth">
-      {/* Background gradients */}
-      <div className="absolute inset-x-0 top-0 h-[800px] bg-[radial-gradient(ellipse_at_top,rgba(59,130,246,0.1)_0%,transparent_50%)] pointer-events-none" />
-      <div className="absolute inset-x-0 top-[600px] h-[800px] bg-[radial-gradient(ellipse_at_left,rgba(236,72,153,0.05)_0%,transparent_40%)] pointer-events-none" />
+    <main className="min-h-screen bg-[#050508] text-slate-300 font-sans selection:bg-blue-500/30 overflow-x-hidden">
+      {/* Background Cinematic Elements */}
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(37,99,235,0.08)_0%,transparent_50%)] pointer-events-none" />
+      <div className="fixed inset-0 pointer-events-none opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+      
+      {/* Animated Scanline Overlay */}
+      <div className="fixed inset-0 pointer-events-none z-50 opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
 
-      {/* Sticky Top Nav */}
-      <nav className="sticky top-6 z-50 mx-auto max-w-fit px-5 py-2.5 bg-[#0a0a0f]/80 backdrop-blur-xl border border-white/10 rounded-full flex gap-8 items-center shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
-        <a href="#" className="font-bold text-white tracking-widest text-sm flex items-center gap-2 pr-2 border-r border-white/10 hover:text-blue-400 transition-colors">
-          <Rocket className="w-5 h-5 text-blue-500 drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
-          ELARA
-        </a>
-        <div className="hidden sm:flex gap-6">
-          <a href="#sky-score" className="text-xs font-semibold text-slate-300 hover:text-white transition-colors relative group">
-            Sky Score
-            <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-blue-500 transition-all group-hover:w-full" />
-          </a>
-          <a href="#trackers" className="text-xs font-semibold text-slate-300 hover:text-white transition-colors relative group">
-            Trackers
-            <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-purple-500 transition-all group-hover:w-full" />
-          </a>
-          <a href="#events" className="text-xs font-semibold text-slate-300 hover:text-white transition-colors relative group">
-            Events
-            <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-pink-500 transition-all group-hover:w-full" />
-          </a>
-        </div>
-      </nav>
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pb-24 space-y-6">
-
-        {/* ─── Hero Section (Bento Grid) ──────────────────────────────────────── */}
-        <section id="sky-score" className="scroll-mt-28">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="relative max-w-7xl mx-auto px-6 pt-32 pb-32">
+        
+        {/* ─── Hero Section ─────────────────────────────────────────── */}
+        <section id="sky-score" className="mb-24">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
             
-            {/* BIG HERO CARD (Earth Globe) */}
-            <div className="lg:col-span-8 bg-black/40 backdrop-blur-xl border border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] rounded-[2rem] overflow-hidden relative h-[500px] lg:h-[550px] group">
-              <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-              <EarthGlobe
-                skyScore={skyScore}
-                skyLoading={skyLoading}
-                skyError={skyError}
-                cityName={location.city}
-                onRetry={() => fetchSkyScore(location.lat, location.lng)}
-                events={events}
-                userLat={location.lat}
-                userLng={location.lng}
-              />
-            </div>
+            {/* Main Observer Terminal (Globe) */}
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="lg:col-span-8 relative group"
+            >
+              <div className="absolute -inset-1 bg-gradient-to-b from-blue-500/20 to-purple-500/20 rounded-[3rem] blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-1000" />
+              <div className="relative h-[600px] rounded-[3rem] bg-[#0a0a0f] border border-white/5 overflow-hidden shadow-2xl">
+                 <div className="absolute top-0 left-0 right-0 p-8 flex justify-between items-start z-20 pointer-events-none">
+                    <ISSLiveStatsBar />
+                    <div className="text-right font-mono text-[10px] text-slate-600 uppercase tracking-widest hidden sm:block">
+                       lat: {location.lat.toFixed(4)}<br />
+                       lng: {location.lng.toFixed(4)}
+                    </div>
+                 </div>
+                 <EarthGlobe
+                    skyScore={skyScore}
+                    skyLoading={skyLoading}
+                    skyError={skyError}
+                    cityName={location.city}
+                    onRetry={() => fetchSkyScore(location.lat, location.lng)}
+                    events={events}
+                    userLat={location.lat}
+                    userLng={location.lng}
+                 />
+                 {/* Bottom Gradient Fade */}
+                 <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#0a0a0f] to-transparent pointer-events-none" />
+              </div>
+            </motion.div>
             
-            {/* METRICS SIDEBAR */}
-            <div className="lg:col-span-4 flex flex-col gap-6 min-h-0">
-              <div className="glass-card rounded-[2rem] p-8 flex flex-col h-full bg-[#0d1017]/80 shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 blur-[80px] rounded-full pointer-events-none" />
-                <div className="relative z-10 w-full text-center mb-8">
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 text-[10px] font-bold mb-6 uppercase tracking-widest"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-                    Tonight's Forecast
-                  </motion.div>
-                  
-                  <h1 className="text-4xl lg:text-5xl font-bold text-white mb-2 tracking-tight drop-shadow-md">
-                    Sky Score
-                  </h1>
-                  <p className="text-slate-400 text-sm font-medium">
-                    {location.city} — {new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}
-                  </p>
-                </div>
+            {/* Information Control Center */}
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="lg:col-span-4 flex flex-col gap-8"
+            >
+              <div className="flex-1 bg-[#0a0a0f] border border-white/5 rounded-[3rem] p-10 relative overflow-hidden flex flex-col items-center text-center group">
+                 <div className="absolute top-0 right-0 p-6 opacity-10">
+                    <Sparkles className="w-12 h-12 text-blue-400" />
+                 </div>
+                 
+                 <div className="w-24 h-24 bg-blue-600/10 rounded-3xl flex items-center justify-center mb-8 relative">
+                    <Navigation className="w-10 h-10 text-blue-500" />
+                    <div className="absolute inset-0 border border-blue-500/20 rounded-3xl animate-[ping_3s_ease-in-out_infinite]" />
+                 </div>
 
-                <div className="w-full relative z-10 mb-8">
-                  <LocationPicker
-                    onLocationChange={handleLocationChange}
-                    currentCity={location.city}
-                    loading={skyLoading}
-                  />
-                </div>
+                 <h1 className="text-4xl font-black text-white mb-3 tracking-tight italic uppercase">
+                    Sky <span className="text-blue-500">Score</span>
+                 </h1>
+                 <p className="text-slate-500 text-sm font-medium mb-10 max-w-[200px] leading-relaxed uppercase tracking-widest">
+                    Observational quality metrics for {location.city}
+                 </p>
 
-                {skyScore && !skyLoading && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="flex flex-col gap-3 mt-auto"
-                  >
+                 <div className="w-full mb-10">
+                    <LocationPicker
+                      onLocationChange={(lat, lng, city) => setLocation({ lat, lng, city })}
+                      currentCity={location.city}
+                      loading={skyLoading}
+                    />
+                 </div>
+
+                 <div className="w-full space-y-3 mt-auto">
                     {[
-                      { icon: Cloud, label: "Cloud Cover", value: `${skyScore.metrics.cloudCover}%`, color: "#94a3b8" },
-                      { icon: Eye, label: "Light Pollution", value: `${skyScore.metrics.lightPollution}%`, color: "#fbbf24" },
-                      { icon: Moon, label: "Moon Brightness", value: `${skyScore.metrics.moonBrightness}%`, color: "#a78bfa" },
-                    ].map(({ icon: Icon, label, value, color }) => (
-                      <div
-                        key={label}
-                        className="flex items-center justify-between px-4 py-3 rounded-2xl bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.05] transition-colors"
-                      >
+                      { icon: Cloud, label: "Cloud Cover", value: skyScore?.metrics.cloudCover + "%", color: "text-blue-400" },
+                      { icon: Eye, label: "Light Pollution", value: skyScore?.metrics.lightPollution + "%", color: "text-amber-400" },
+                      { icon: Moon, label: "Moon Luminescence", value: skyScore?.metrics.moonBrightness + "%", color: "text-purple-400" },
+                    ].map((m) => (
+                      <div key={m.label} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/[0.04] group/item hover:border-white/10 transition-colors">
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-black/40 rounded-lg">
-                            <Icon className="w-4 h-4" style={{ color }} />
-                          </div>
-                          <span className="text-slate-300 text-sm font-medium">{label}</span>
+                           <m.icon className={cn("w-4 h-4", m.color)} />
+                           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">{m.label}</span>
                         </div>
-                        <span className="text-white font-mono font-bold">{value}</span>
+                        <span className="text-sm font-bold text-white font-mono">{skyLoading ? "..." : m.value}</span>
                       </div>
                     ))}
-                  </motion.div>
-                )}
+                 </div>
               </div>
-            </div>
+            </motion.div>
 
           </div>
         </section>
 
-        {/* ─── Trackers (Bento Grid) ──────────────────────────────────── */}
-        <section id="trackers" className="scroll-mt-28">
-          <div className="flex items-center gap-3 mb-6 px-2">
-            <h2 className="text-2xl font-bold text-white">Live Trackers</h2>
-            <div className="h-px bg-white/10 flex-grow" />
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <section className="lg:col-span-5 h-[450px]">
-              <ISSTracker userLat={location.lat} userLng={location.lng} />
-            </section>
+        {/* ─── Real-time Trackers Section ────────────────────────────── */}
+        <section id="trackers" className="mb-32">
+           <div className="flex items-center justify-between mb-12 px-2">
+              <div className="flex flex-col">
+                 <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic">Atmospheric <span className="text-blue-500">Overlay</span></h2>
+                 <div className="flex items-center gap-2 mt-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Synchronized with {location.city} Ground STN</span>
+                 </div>
+              </div>
+           </div>
 
-            <section className="lg:col-span-7 h-[450px]">
-              <SkyMap lat={location.lat} lng={location.lng} />
-            </section>
-          </div>
+           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="lg:col-span-5 relative"
+              >
+                 <ISSTracker userLat={location.lat} userLng={location.lng} />
+              </motion.div>
+
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 }}
+                className="lg:col-span-7 h-[550px]"
+              >
+                 <SkyMap lat={location.lat} lng={location.lng} />
+              </motion.div>
+           </div>
         </section>
 
-        {/* ─── Events Section ────────────────────────────────────── */}
-        <section id="events" className="scroll-mt-28">
-          <div className="flex items-center justify-between mb-8 px-2">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-              Upcoming Events
-              <span className="text-sm px-2.5 py-1 bg-white/10 rounded-full text-slate-300 font-medium">
-                {eventsLoading ? "..." : events.length}
-              </span>
-            </h2>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center bg-[#0a0a0f]/50 backdrop-blur-md rounded-xl p-1.5 border border-white/10">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded-lg transition-all ${viewMode === "grid" ? "bg-white/10 text-white shadow-sm" : "text-slate-500 hover:text-slate-300"}`}
-                  title="Grid View"
-                >
-                  <LayoutGrid className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode("timeline")}
-                  className={`p-2 rounded-lg transition-all ${viewMode === "timeline" ? "bg-white/10 text-white shadow-sm" : "text-slate-500 hover:text-slate-300"}`}
-                  title="Timeline View"
-                >
-                  <List className="w-4 h-4" />
-                </button>
+        {/* ─── Tactical Event List ────────────────────────────────────── */}
+        <section id="events">
+           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12 px-4">
+              <div className="flex flex-col">
+                 <h2 className="text-4xl font-black text-white tracking-tighter italic uppercase">Mission <span className="text-pink-500">Queue</span></h2>
+                 <p className="text-slate-500 text-sm mt-3 font-medium max-w-sm uppercase tracking-widest leading-relaxed">
+                    Global orbital launch schedule and deep-space milestones.
+                 </p>
               </div>
-              {!eventsLoading && (
-                <button
-                  onClick={fetchEvents}
-                  className="hidden sm:flex items-center gap-2 px-4 py-2 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 rounded-xl transition-colors font-medium text-sm border border-blue-500/20"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Refresh
-                </button>
+
+              <div className="flex items-center gap-6">
+                 <div className="flex bg-[#0a0a0f] border border-white/5 rounded-2xl p-1.5">
+                    <button 
+                       onClick={() => setViewMode("grid")}
+                       className={cn("p-3 rounded-xl transition-all", viewMode === "grid" ? "bg-white/10 text-white" : "text-slate-600 hover:text-slate-400")}
+                    >
+                       <LayoutGrid className="w-5 h-5" />
+                    </button>
+                    <button 
+                       onClick={() => setViewMode("timeline")}
+                       className={cn("p-3 rounded-xl transition-all", viewMode === "timeline" ? "bg-white/10 text-white" : "text-slate-600 hover:text-slate-400")}
+                    >
+                       <List className="w-5 h-5" />
+                    </button>
+                 </div>
+                 <button 
+                   onClick={fetchEvents}
+                   className="p-4 bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 rounded-2xl text-slate-400 hover:text-white transition-all group active:scale-95"
+                 >
+                    <RefreshCw className={cn("w-5 h-5", eventsLoading && "animate-spin")} />
+                 </button>
+              </div>
+           </div>
+
+           <div className="relative p-10 rounded-[4rem] bg-[#0a0a0f] border border-white/[0.02] shadow-3xl">
+              {/* Decorative Corner Accents */}
+              <div className="absolute top-8 left-8 w-8 h-8 border-t-2 border-l-2 border-white/5 rounded-tl-2xl" />
+              <div className="absolute bottom-8 right-8 w-8 h-8 border-b-2 border-r-2 border-white/5 rounded-br-2xl" />
+
+              {eventsLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                   {Array(6).fill(null).map((_, i) => <EventCardSkeleton key={i} />)}
+                </div>
+              ) : events.length === 0 ? (
+                <div className="py-32 text-center text-slate-700 font-mono italic uppercase tracking-widest text-sm">
+                   End of current signal stream. Waiting for planetary rotation.
+                </div>
+              ) : (
+                <div className={cn(
+                  viewMode === "grid" 
+                    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" 
+                    : "flex flex-col gap-10 pl-12 relative before:absolute before:inset-y-0 before:left-4 before:w-px before:bg-white/5"
+                )}>
+                   {events.map((event, i) => (
+                     <div key={event.id} className="relative">
+                        {viewMode === "timeline" && (
+                          <div className="absolute top-1/2 -left-[44px] -translate-y-1/2 w-3 h-3 rounded-full bg-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.5)] z-10" />
+                        )}
+                        <EventCard event={event} index={i} />
+                     </div>
+                   ))}
+                </div>
               )}
-            </div>
-          </div>
-
-          <div className="bg-[#0c0d12]/50 border border-white/[0.05] rounded-[2rem] p-6 sm:p-8 backdrop-blur-sm">
-            {eventsLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Array(6).fill(null).map((_, i) => (
-                  <EventCardSkeleton key={i} />
-                ))}
-              </div>
-            ) : eventsError ? (
-              <div className="py-20 text-center">
-                <p className="text-slate-500 mb-4 text-lg">Failed to load launch events</p>
-                <button
-                  onClick={fetchEvents}
-                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all font-medium inline-flex items-center gap-2"
-                >
-                  <RefreshCw className="w-4 h-4" /> Try Again
-                </button>
-              </div>
-            ) : events.length === 0 ? (
-              <div className="py-20 text-center text-slate-500 text-lg">
-                No upcoming events found.
-              </div>
-            ) : (
-              <div className={
-                viewMode === "grid"
-                  ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-                  : "relative flex flex-col gap-8 pl-10 before:absolute before:inset-y-0 before:left-3 before:w-[2px] before:bg-gradient-to-b before:from-blue-500/50 before:via-purple-500/50 before:to-transparent"
-              }>
-                {events.map((event, i) => (
-                  <div key={event.id} className={viewMode === "timeline" ? "relative" : ""}>
-                    {viewMode === "timeline" && (
-                      <div className="absolute top-10 -left-[39px] w-5 h-5 rounded-full bg-black border-4 border-purple-500 z-10 shadow-[0_0_15px_rgba(168,85,247,0.6)]" />
-                    )}
-                    <EventCard event={event} index={i} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+           </div>
         </section>
 
+      </div>
+
+      {/* Extreme Bottom Page Info */}
+      <div className="fixed bottom-8 left-8 flex items-center gap-4 text-slate-700 font-mono text-[9px] tracking-[0.3em] uppercase pointer-events-none z-10">
+         <span className="opacity-40">ELARA-GRID-v4.0</span>
+         <div className="w-1 h-1 bg-white/20 rounded-full" />
+         <span className="opacity-40">SIGNAL_STR: 98%</span>
       </div>
     </main>
   );

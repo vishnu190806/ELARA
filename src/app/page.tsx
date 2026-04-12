@@ -22,6 +22,8 @@ const EarthGlobe = dynamic(() => import("@/components/EarthGlobe"), {
   ),
 });
 
+const ISSTracker = dynamic(() => import("@/components/ISSTracker"), { ssr: false });
+
 interface SkyScore {
   score: number;
   metrics: { cloudCover: number; lightPollution: number; moonBrightness: number };
@@ -163,10 +165,18 @@ export default function HomePage() {
           </div>
         </motion.section>
 
-        {/* ─── Sky Map Section ──────────────────────────────────── */}
-        <section className="mb-12">
-          <SkyMap lat={location.lat} lng={location.lng} />
-        </section>
+        {/* ─── Sky Map & ISS Section ──────────────────────────────────── */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+            {/* ─── ISS Tracker Section ──────────────────────────────── */}
+            <section className="lg:col-span-1 h-[400px]">
+              <ISSTracker userLat={location.lat} userLng={location.lng} />
+            </section>
+
+            {/* ─── Sky Map Section ──────────────────────────────────── */}
+            <section className="lg:col-span-2 h-[400px]">
+              <SkyMap lat={location.lat} lng={location.lng} />
+            </section>
+          </div>
 
         {/* ─── Events Section ────────────────────────────────────── */}
         <section>

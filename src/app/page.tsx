@@ -8,6 +8,11 @@ import { SpaceEvent } from "@/types";
 import { Cloud, Eye, Moon, RefreshCw } from "lucide-react";
 import dynamic from "next/dynamic";
 
+const SkyMap = dynamic(() => import("@/components/SkyMap"), {
+  ssr: false,
+  loading: () => <div className="h-64 rounded-2xl skeleton" />,
+});
+
 const Earth3D = dynamic(() => import("@/components/Earth3D"), {
   ssr: false,
   loading: () => (
@@ -154,6 +159,11 @@ export default function HomePage() {
             />
           </div>
         </motion.section>
+
+        {/* ─── Sky Map Section ──────────────────────────────────── */}
+        <section className="mb-12">
+          <SkyMap lat={location.lat} lng={location.lng} />
+        </section>
 
         {/* ─── Events Section ────────────────────────────────────── */}
         <section>

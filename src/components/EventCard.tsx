@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Countdown from "./Countdown";
 import RocketSVG from "./RocketSVG";
-import { Calendar, Rocket, Telescope, Zap, MapPin, Share2, ExternalLink, Users, CheckCircle, Navigation, Info, Activity } from "lucide-react";
+import { Calendar, Rocket, Telescope, Zap, MapPin, Share2, ExternalLink, Info, Activity } from "lucide-react";
 import { SpaceEvent } from "@/types";
 import Image from "next/image";
 
@@ -137,7 +137,7 @@ export default function EventCard({ event, index = 0 }: EventCardProps) {
                    
                    {event.explanation && (
                       <p className="text-[11px] text-slate-500 leading-relaxed italic border-l-2 border-blue-500/20 pl-4 py-1">
-                         "{event.explanation}"
+                         &quot;{event.explanation}&quot;
                       </p>
                    )}
 
@@ -207,6 +207,3 @@ export function EventCardSkeleton() {
   );
 }
 
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(" ");
-}

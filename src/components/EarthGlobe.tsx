@@ -12,10 +12,7 @@ const Globe = dynamic(() => import("react-globe.gl"), { ssr: false });
 
 interface EarthGlobeProps {
   skyScore: { score: number } | null;
-  skyLoading: boolean;
-  skyError: boolean;
   cityName: string;
-  onRetry: () => void;
   events?: SpaceEvent[];
   userLat?: number;
   userLng?: number;
@@ -32,10 +29,7 @@ const agencyColors: Record<string, string> = {
 
 export default function EarthGlobe({
   skyScore,
-  skyLoading,
-  skyError,
   cityName,
-  onRetry,
   events = [],
   userLat = 17.385,
   userLng = 78.4867
@@ -45,8 +39,10 @@ export default function EarthGlobe({
   const [tleData, setTleData] = useState<{ line1: string; line2: string } | null>(null);
   const [globeReady, setGlobeReady] = useState(false);
   
-  const globeRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const globeRef = useRef<any>(null); // react-globe.gl type is external, any is required for the ref object itself
   const [hoveredIss, setHoveredIss] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [hoveredSite, setHoveredSite] = useState<any | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -155,6 +151,7 @@ export default function EarthGlobe({
     return elements;
   }, [userLat, userLng, issData]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const renderHtmlElement = (d: any) => {
     const el = document.createElement("div");
     if (d.type === "user") {
@@ -249,9 +246,9 @@ export default function EarthGlobe({
         pointColor="color"
         pointAltitude={0.02}
         pointRadius={0.6}
-        onPointHover={(point: any) => setHoveredSite(point)}
-        onPointClick={(point: any) => {
-          if (point) window.location.href = `/events/${point.id}`;
+        onPointHover={(point: unknown) => setHoveredSite(point)}
+        onPointClick={(point: unknown) => {
+          if (point) window.location.href = `/events/${(point as { id: string }).id}`;
         }}
         
         onGlobeReady={() => setGlobeReady(true)}

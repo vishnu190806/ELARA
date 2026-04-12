@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import EventCard, { EventCardSkeleton } from "@/components/EventCard";
 import LocationPicker from "@/components/LocationPicker";
 import { SpaceEvent } from "@/types";
-import { Cloud, Eye, Moon, RefreshCw, LayoutGrid, List, Rocket, Sparkles, Navigation, Map } from "lucide-react";
+import { Cloud, Eye, Moon, RefreshCw, LayoutGrid, List, Sparkles, Navigation } from "lucide-react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 
@@ -102,27 +102,17 @@ export default function HomePage() {
   const [location, setLocation] = useState({ lat: DEFAULT_LAT, lng: DEFAULT_LNG, city: DEFAULT_CITY });
   const [skyScore, setSkyScore] = useState<SkyScore | null>(null);
   const [skyLoading, setSkyLoading] = useState(true);
-  const [skyError, setSkyError] = useState(false);
   const [events, setEvents] = useState<SpaceEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
-  const [eventsError, setEventsError] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "timeline">("grid");
-  const [systemReady, setSystemReady] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setSystemReady(true), 500);
-    return () => clearTimeout(timer);
-  }, []);
 
   const fetchSkyScore = useCallback(async (lat: number, lng: number) => {
     setSkyLoading(true);
-    setSkyError(false);
     try {
       const res = await fetch(`/api/sky-score?lat=${lat}&lng=${lng}`);
       if (!res.ok) throw new Error();
       setSkyScore(await res.json());
     } catch {
-      setSkyError(true);
     } finally {
       setSkyLoading(false);
     }
@@ -130,14 +120,12 @@ export default function HomePage() {
 
   const fetchEvents = useCallback(async () => {
     setEventsLoading(true);
-    setEventsError(false);
     try {
       const res = await fetch("/api/events");
       if (!res.ok) throw new Error();
       const data = await res.json();
       setEvents(data.results || []);
     } catch {
-      setEventsError(true);
     } finally {
       setEventsLoading(false);
     }
@@ -183,10 +171,7 @@ export default function HomePage() {
                  </div>
                  <EarthGlobe
                     skyScore={skyScore}
-                    skyLoading={skyLoading}
-                    skyError={skyError}
                     cityName={location.city}
-                    onRetry={() => fetchSkyScore(location.lat, location.lng)}
                     events={events}
                     userLat={location.lat}
                     userLng={location.lng}

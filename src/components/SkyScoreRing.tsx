@@ -16,7 +16,7 @@ function getScoreLabel(score: number): { label: string; color: string; gradient:
 }
 
 export default function SkyScoreRing({ score, size = 220 }: SkyScoreRingProps) {
-  const { label, color, gradient } = getScoreLabel(score);
+  const { label, color } = getScoreLabel(score);
 
   const strokeWidth = 8;
   const radius = (size - 40) / 2;

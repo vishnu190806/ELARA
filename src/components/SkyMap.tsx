@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, X, Target, Crosshair, Zap, Activity, Info } from "lucide-react";
+import { X, Target, Crosshair, Activity, Info } from "lucide-react";
 
 // Curated bright stars with RA/Dec, magnitude, and metadata
 export type Star = { name: string; ra: number; dec: number; mag: number; color: string; desc?: string; const?: string; };
@@ -83,7 +83,6 @@ export default function SkyMap({ lat = 17.385, lng = 78.487 }: SkyMapProps) {
   const positionsRef = useRef<Array<{ x: number; y: number; alt: number; star: Star }>>([]);
   const [hoveredStar, setHoveredStar] = useState<Star | null>(null);
   const [selectedStar, setSelectedStar] = useState<Star | null>(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [timeOffsetHours, setTimeOffsetHours] = useState(0);
 
   useEffect(() => {
@@ -252,7 +251,6 @@ export default function SkyMap({ lat = 17.385, lng = 78.487 }: SkyMapProps) {
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    setMousePos({ x, y });
 
     let minDist = 25;
     let closest: Star | null = null;
@@ -362,7 +360,7 @@ export default function SkyMap({ lat = 17.385, lng = 78.487 }: SkyMapProps) {
                     <span className="text-[9px] font-black text-blue-400 uppercase tracking-[0.2em]">{selectedStar.const || "Void"}</span>
                  </div>
                  <p className="text-[11px] text-slate-400 leading-relaxed italic border-l-2 border-blue-500/20 pl-4">
-                    "{selectedStar.desc}"
+                    &quot;{selectedStar.desc}&quot;
                  </p>
                  <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
                     <div className="p-3 bg-white/[0.02] border border-white/5 rounded-2xl">

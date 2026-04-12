@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import EventCard, { EventCardSkeleton } from "@/components/EventCard";
-import { RefreshCw, Rocket, MapPin, Globe, ChevronRight, Star, Cpu, Zap, Radio } from "lucide-react";
+import { RefreshCw, Rocket, Globe, Star, Cpu, Zap, Radio } from "lucide-react";
 import { SpaceEvent } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -126,7 +126,7 @@ export default function ISROPage() {
                 exit={{ opacity: 0, scale: 1.02 }}
                 className="text-slate-300 text-sm font-medium leading-relaxed italic"
               >
-                "{ISRO_FACTS[factIndex]}"
+                &quot;{ISRO_FACTS[factIndex]}&quot;
               </motion.p>
             </AnimatePresence>
             <div className="mt-6 h-1 w-full bg-white/[0.05] rounded-full overflow-hidden">

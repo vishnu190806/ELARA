@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Rocket, Telescope, Eye, RefreshCw, Shield, LogIn, ChevronRight, Activity, Terminal } from "lucide-react";
+import { Rocket, Eye, RefreshCw, Shield, LogIn, Activity, Terminal } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { requestNotificationPermission } from "@/lib/firebase/messaging";
 

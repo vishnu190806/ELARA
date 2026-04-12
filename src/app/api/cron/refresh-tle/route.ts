@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fetchTleFromSources, FALLBACK_TLE } from "@/lib/tleFetcher";
+import { fetchTleFromSources } from "@/lib/tleFetcher";
 import { adminDb } from "@/lib/firebase/admin";
 
 export const dynamic = "force-dynamic";

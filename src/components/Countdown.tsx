@@ -37,6 +37,7 @@ export default function Countdown({ targetDate, compact = false }: CountdownProp
   }, [target]);
 
   const isPast = target.getTime() < Date.now();
+  const isUrgent = !isPast && (target.getTime() - Date.now()) < 24 * 60 * 60 * 1000;
   if (isPast) {
     return <span className="text-slate-500 text-sm">Launched</span>;
   }
@@ -70,9 +71,18 @@ export default function Countdown({ targetDate, compact = false }: CountdownProp
             key={value}
             initial={{ y: -8, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="w-14 h-14 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center"
+            className={`w-14 h-14 rounded-xl flex items-center justify-center relative ${
+              isUrgent
+                ? "bg-amber-500/10 border border-amber-500/30"
+                : "bg-white/[0.04] border border-white/[0.06]"
+            }`}
           >
-            <span className="text-2xl font-bold font-mono text-white">
+            {isUrgent && (
+              <span className="absolute inset-0 rounded-xl animate-ping bg-amber-500/10 pointer-events-none" />
+            )}
+            <span className={`text-2xl font-bold font-mono ${
+              isUrgent ? "text-amber-400" : "text-white"
+            }`}>
               {String(value).padStart(2, "0")}
             </span>
           </motion.div>

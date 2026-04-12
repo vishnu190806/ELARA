@@ -8,6 +8,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import dynamic from "next/dynamic";
 
 const StarField = dynamic(() => import("@/components/StarField"), { ssr: false });
+const SpaceCursor = dynamic(() => import("@/components/SpaceCursor"), { ssr: false });
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -45,6 +46,7 @@ export default function RootLayout({
     <html lang="en" className={cn("dark", inter.variable)}>
       <body className="antialiased bg-[#0a0a0f] text-slate-100 min-h-screen">
         <StarField />
+        <SpaceCursor />
         <AuthProvider>
           <Navbar />
           {children}

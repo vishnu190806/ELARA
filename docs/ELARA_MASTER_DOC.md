@@ -109,7 +109,7 @@ ELARA tracks the ISS in real-time, fetching Two-Line Element sets (TLE) and prop
 ```mermaid
 sequenceDiagram
     participant FE as EarthGlobe Component
-    participant API as /api/iss-position
+    participant API as "/api/iss-position"
     participant TLE as TLE Sources (Celestrak/Satcat)
     participant DB as Firestore Cache
     
@@ -139,18 +139,18 @@ Push notifications are delivered via Firebase Cloud Messaging (FCM).
 
 ```mermaid
 graph LR
-    User[User Opt-in] --> Permission[Request Browser Permission]
-    Permission --> Token[Generate FCM Token]
-    Token --> API[/api/notifications/subscribe]
-    API --> Firestore[(Store Token + Prefs)]
+    User["User Opt-in"] --> Permission["Request Browser Permission"]
+    Permission --> Token["Generate FCM Token"]
+    Token --> SUB["/api/notifications/subscribe"]
+    SUB --> DB[("Store Token + Prefs")]
     
     subgraph "Server Cron"
-        Cron[Cron Job: Rare Event Discovery]
-        Cron --> Filter[Filter Users by Region/Prefs]
-        Filter --> FCM[Send via Firebase Cloud Messaging]
+        Cron["Cron Job: Rare Event Discovery"]
+        Cron --> Filter["Filter Users by Region/Prefs"]
+        Filter --> FCM["Send via Firebase Cloud Messaging"]
     end
     
-    FCM --> UserDevice[Device Push Notification]
+    FCM --> UserDevice["Device Push Notification"]
 ```
 
 ---
